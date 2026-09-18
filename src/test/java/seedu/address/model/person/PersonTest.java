@@ -19,6 +19,23 @@ import seedu.address.testutil.PersonBuilder;
 public class PersonTest {
 
     @Test
+    public void constructor_nullRemark_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> new Person(ALICE.getName(), ALICE.getPhone(), ALICE.getEmail(),
+                ALICE.getAddress(), ALICE.getTags(), null));
+    }
+
+    @Test
+    public void remark_differentValue_changesEqualityButNotIdentity() {
+        Person editedAlice = new PersonBuilder(ALICE).withRemark("Likes coffee").build();
+        assertEquals(new Remark("Likes coffee"), editedAlice.getRemark());
+        assertTrue(ALICE.isSamePerson(editedAlice));
+        assertFalse(ALICE.equals(editedAlice));
+        Person copy = new PersonBuilder(editedAlice).build();
+        assertEquals(editedAlice, copy);
+        assertEquals(editedAlice.hashCode(), copy.hashCode());
+    }
+
+    @Test
     public void asObservableList_modifyList_throwsUnsupportedOperationException() {
         Person person = new PersonBuilder().build();
         assertThrows(UnsupportedOperationException.class, () -> person.getTags().remove(0));
@@ -93,7 +110,8 @@ public class PersonTest {
     @Test
     public void toStringMethod() {
         String expected = Person.class.getCanonicalName() + "{name=" + ALICE.getName() + ", phone=" + ALICE.getPhone()
-                + ", email=" + ALICE.getEmail() + ", address=" + ALICE.getAddress() + ", tags=" + ALICE.getTags() + "}";
+                + ", email=" + ALICE.getEmail() + ", address=" + ALICE.getAddress() + ", tags=" + ALICE.getTags()
+                + ", remark=" + ALICE.getRemark() + "}";
         assertEquals(expected, ALICE.toString());
     }
 }
