@@ -11,7 +11,7 @@
         "ananya-kharbanda": "Ananya Kharbanda",
         "bryan-lee-jun-you": "Bryan Lee Jun You",
         "jean-doe": "Jean Doe",
-        "james-doe": "James Doe"
+        "tristan-tay": "Tristan Tay"
       },
       "headingKeywords": {}
     },
@@ -146,6 +146,14 @@
     {
       "src": "team/ananyakharbanda.md",
       "title": "Ananya Kharbanda's Project Portfolio Page",
+      "headings": {
+        "project-addressbook-level-3": "Project: AddressBook Level 3"
+      },
+      "headingKeywords": {}
+    },
+    {
+      "src": "team/darealtristan.md",
+      "title": "John Doe's Project Portfolio Page",
       "headings": {
         "project-addressbook-level-3": "Project: AddressBook Level 3"
       },
