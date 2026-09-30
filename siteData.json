@@ -8,7 +8,7 @@
         "about-us": "About Us",
         "project-team": "Project team",
         "john-doe": "John Doe",
-        "jane-doe": "Jane Doe",
+        "ananya-kharbanda": "Ananya Kharbanda",
         "bryan-lee-jun-you": "Bryan Lee Jun You",
         "jean-doe": "Jean Doe",
         "james-doe": "James Doe"
@@ -138,6 +138,14 @@
     {
       "src": "team/8ryanl33.md",
       "title": "Bryan Lee's Project Portfolio Page",
+      "headings": {
+        "project-addressbook-level-3": "Project: AddressBook Level 3"
+      },
+      "headingKeywords": {}
+    },
+    {
+      "src": "team/ananyakharbanda.md",
+      "title": "Ananya Kharbanda's Project Portfolio Page",
       "headings": {
         "project-addressbook-level-3": "Project: AddressBook Level 3"
       },
