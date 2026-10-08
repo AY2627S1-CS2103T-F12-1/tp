@@ -64,6 +64,9 @@ public class JsonAddressBookStorage {
 
         try {
             return Optional.of(jsonAddressBook.get().toModelType());
+        } catch (DuplicateStudentIdException dsie) {
+            logger.info("Duplicate Student ID found in " + filePath + ": " + dsie.getMessage());
+            throw new DataLoadingException(dsie.getMessage(), dsie);
         } catch (IllegalValueException ive) {
             logger.info("Illegal values found in " + filePath + ": " + ive.getMessage());
             throw new DataLoadingException(MESSAGE_INVALID_FILE, ive);

@@ -55,7 +55,7 @@ class JsonSerializableAddressBook {
             }
             Person person = jsonAdaptedPerson.toModelType();
             if (addressBook.hasPerson(person)) {
-                throw new IllegalValueException(
+                throw new DuplicateStudentIdException(
                         String.format(MESSAGE_DUPLICATE_STUDENT_ID, person.getStudentId()));
             }
             addressBook.addPerson(person);

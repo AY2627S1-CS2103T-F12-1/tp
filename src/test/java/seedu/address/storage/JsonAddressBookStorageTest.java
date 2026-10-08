@@ -144,6 +144,15 @@ public class JsonAddressBookStorageTest {
     }
 
     @Test
+    public void readAddressBook_duplicateStudentId_throwsDuplicateStudentIdMessage() {
+        Path file = Paths.get("src", "test", "data", "JsonSerializableAddressBookTest",
+                "duplicatePersonAddressBook.json");
+        assertThrows(DataLoadingException.class,
+                String.format(JsonSerializableAddressBook.MESSAGE_DUPLICATE_STUDENT_ID, "A1234567B"), () ->
+                new JsonAddressBookStorage(file).readAddressBook());
+    }
+
+    @Test
     public void readAddressBook_wrongJsonStructure_throwsInvalidFileMessage() throws Exception {
         Path file = testFolder.resolve("wrongStructure.json");
         Files.writeString(file, "{ \"persons\": \"not a list\" }");
