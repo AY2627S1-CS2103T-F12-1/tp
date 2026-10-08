@@ -57,6 +57,15 @@ public class JsonAddressBookStorageTest {
     }
 
     @Test
+    public void saveAddressBook_folderCannotBeCreated_throwsDataStorageLocationException() throws Exception {
+        Path blockingFile = Files.writeString(testFolder.resolve("data"), "not a folder");
+        Path file = blockingFile.resolve("addressBook.json");
+        assertThrows(DataStorageLocationException.class, () ->
+                new JsonAddressBookStorage(file).saveAddressBook(getTypicalAddressBook()));
+        assertEquals("not a folder", Files.readString(blockingFile));
+    }
+
+    @Test
     public void saveAddressBook_missingParentDirectories_createsThem() throws Exception {
         Path file = testFolder.resolve("nested/data/students.json");
         JsonAddressBookStorage storage = new JsonAddressBookStorage(file);

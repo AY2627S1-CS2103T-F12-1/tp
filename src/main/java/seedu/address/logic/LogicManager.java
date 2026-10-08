@@ -14,6 +14,7 @@ import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.person.Person;
+import seedu.address.storage.DataStorageLocationException;
 import seedu.address.storage.Storage;
 
 /**
@@ -21,6 +22,7 @@ import seedu.address.storage.Storage;
  */
 public class LogicManager implements Logic {
     public static final String MESSAGE_SAVE_FAILURE = "Unable to save student data.";
+    public static final String MESSAGE_STORAGE_LOCATION_FAILURE = "Unable to create data storage location.";
     public static final String MESSAGE_DATA_UNAVAILABLE =
             "Student data is unavailable because loading failed. Fix the data file and restart.";
 
@@ -90,6 +92,9 @@ public class LogicManager implements Logic {
     private void saveStudentData(Model pendingModel) throws CommandException {
         try {
             storage.saveAddressBook(pendingModel.getAddressBook());
+        } catch (DataStorageLocationException dsle) {
+            logger.warning("Unable to create data storage location: " + dsle.getMessage());
+            throw new CommandException(MESSAGE_STORAGE_LOCATION_FAILURE, dsle);
         } catch (IOException ioe) {
             logger.warning("Unable to save student data: " + ioe.getMessage());
             throw new CommandException(MESSAGE_SAVE_FAILURE, ioe);

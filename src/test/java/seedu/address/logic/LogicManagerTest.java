@@ -168,6 +168,17 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_storageFolderCannotBeCreated_preservesRecords() throws Exception {
+        Path blockingFile = Files.writeString(temporaryFolder.resolve("data"), "not a folder");
+        logic = new LogicManager(model, new StorageManager(
+                new JsonAddressBookStorage(blockingFile.resolve("addressBook.json")),
+                new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json"))));
+        assertCommandException("add n/Samuel i/A0123456B e/sam@example.com",
+                LogicManager.MESSAGE_STORAGE_LOCATION_FAILURE);
+        assertEquals(new AddressBook(), model.getAddressBook());
+    }
+
+    @Test
     public void execute_deleteAfterFind_usesStudentIdAndPersists() throws Exception {
         model.addPerson(ALICE);
         model.addPerson(BENSON);

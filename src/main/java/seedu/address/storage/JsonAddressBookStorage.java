@@ -108,6 +108,7 @@ public class JsonAddressBookStorage {
      *
      * @param addressBook The non-null student records to save.
      * @param filePath location of the data. Cannot be null.
+     * @throws DataStorageLocationException if the folder for the data file cannot be created.
      * @throws IOException if writing fails or the filesystem does not support atomic replacement.
      */
     public void saveAddressBook(ReadOnlyAddressBook addressBook, Path filePath) throws IOException {
@@ -115,13 +116,21 @@ public class JsonAddressBookStorage {
         requireNonNull(filePath);
 
         Path targetFile = filePath.toAbsolutePath().normalize();
-        Files.createDirectories(targetFile.getParent());
+        createStorageFolder(targetFile.getParent());
         Path temporaryFile = Files.createTempFile(targetFile.getParent(), "teachassist-", ".tmp");
         try {
             JsonUtil.saveJsonFile(new JsonSerializableAddressBook(addressBook), temporaryFile);
             replaceDataFile(temporaryFile, targetFile);
         } finally {
             removeTemporaryFile(temporaryFile);
+        }
+    }
+
+    private void createStorageFolder(Path folder) throws DataStorageLocationException {
+        try {
+            Files.createDirectories(folder);
+        } catch (IOException e) {
+            throw new DataStorageLocationException("Unable to create folder " + folder, e);
         }
     }
 
