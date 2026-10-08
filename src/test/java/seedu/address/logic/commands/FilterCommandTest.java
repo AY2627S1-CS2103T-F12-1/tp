@@ -1,6 +1,8 @@
 package seedu.address.logic.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
 import static seedu.address.testutil.Assert.assertThrows;
 
@@ -97,6 +99,28 @@ public class FilterCommandTest {
 
         assertCommandSuccess(filterCommand, model, expectedMessage, expectedModel);
         assertEquals(List.of(), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void equals() {
+        FilterCommand filterCommand = new FilterCommand(new Label(VALID_LABEL));
+        FilterCommand filterCommandCopy = new FilterCommand(new Label(VALID_LABEL));
+        FilterCommand differentLabelCommand = new FilterCommand(new Label(OTHER_LABEL));
+
+        assertTrue(filterCommand.equals(filterCommand));
+        assertTrue(filterCommand.equals(filterCommandCopy));
+        assertFalse(filterCommand.equals(differentLabelCommand));
+        assertFalse(filterCommand.equals(1));
+        assertFalse(filterCommand.equals(null));
+    }
+
+    @Test
+    public void toStringMethod() {
+        Label label = new Label(VALID_LABEL);
+        FilterCommand filterCommand = new FilterCommand(label);
+        String expected = FilterCommand.class.getCanonicalName() + "{label=" + label + "}";
+
+        assertEquals(expected, filterCommand.toString());
     }
 
     private static AddressBook getAddressBookWith(Person... persons) {
