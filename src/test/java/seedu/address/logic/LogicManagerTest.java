@@ -134,7 +134,7 @@ public class LogicManagerTest {
         assertThrows(DataLoadingException.class, storage::readAddressBook);
         logic = new LogicManager(model, storage, false);
         for (String command : List.of("add n/Samuel i/A0123456B e/sam@example.com", "clear", "delete i/B1234567C",
-                "edit 1 n/Samuel")) {
+                "edit 1 n/Samuel", "label l/Tutorial 1 i/A0123456B")) {
             assertCommandException(command, LogicManager.MESSAGE_DATA_UNAVAILABLE);
         }
         logic.execute("list");
@@ -211,6 +211,16 @@ public class LogicManagerTest {
 
         assertCommandSuccess("label l/Discrete Math Tutorial i/A0101010A",
                 "Added label \"Discrete Math Tutorial\" to Samuel Tan (A0101010A).", expectedModel);
+    }
+
+    @Test
+    public void execute_labelCommand_persistsLabel() throws Exception {
+        model.addPerson(new PersonBuilder().withName("Samuel Tan")
+                .withStudentId("A0101010A")
+                .withEmail("samuel@example.com")
+                .build());
+        logic.execute("label l/Discrete Math Tutorial i/A0101010A");
+        assertEquals(model.getAddressBook(), storage.readAddressBook().orElseThrow());
     }
 
     @Test

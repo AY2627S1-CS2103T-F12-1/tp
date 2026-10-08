@@ -127,17 +127,35 @@ public class JsonAddressBookStorageTest {
 
     @Test
     public void read_notJsonFormat_exceptionThrown() {
-        assertThrows(DataLoadingException.class, () -> readAddressBook("notJsonFormatAddressBook.json"));
+        assertThrows(DataLoadingException.class, JsonAddressBookStorage.MESSAGE_INVALID_FILE, () ->
+                readAddressBook("notJsonFormatAddressBook.json"));
     }
 
     @Test
     public void readAddressBook_invalidPersonAddressBook_throwDataLoadingException() {
-        assertThrows(DataLoadingException.class, () -> readAddressBook("invalidPersonAddressBook.json"));
+        assertThrows(DataLoadingException.class, JsonAddressBookStorage.MESSAGE_INVALID_FILE, () ->
+                readAddressBook("invalidPersonAddressBook.json"));
     }
 
     @Test
     public void readAddressBook_invalidAndValidPersonAddressBook_throwDataLoadingException() {
-        assertThrows(DataLoadingException.class, () -> readAddressBook("invalidAndValidPersonAddressBook.json"));
+        assertThrows(DataLoadingException.class, JsonAddressBookStorage.MESSAGE_INVALID_FILE, () ->
+                readAddressBook("invalidAndValidPersonAddressBook.json"));
+    }
+
+    @Test
+    public void readAddressBook_wrongJsonStructure_throwsInvalidFileMessage() throws Exception {
+        Path file = testFolder.resolve("wrongStructure.json");
+        Files.writeString(file, "{ \"persons\": \"not a list\" }");
+        assertThrows(DataLoadingException.class, JsonAddressBookStorage.MESSAGE_INVALID_FILE, () ->
+                new JsonAddressBookStorage(file).readAddressBook());
+    }
+
+    @Test
+    public void readAddressBook_unreadableFile_throwsUnreadableFileMessage() throws Exception {
+        Path directory = Files.createDirectory(testFolder.resolve("addressBook.json"));
+        assertThrows(DataLoadingException.class, JsonAddressBookStorage.MESSAGE_UNREADABLE_FILE, () ->
+                new JsonAddressBookStorage(directory).readAddressBook());
     }
 
     @Test

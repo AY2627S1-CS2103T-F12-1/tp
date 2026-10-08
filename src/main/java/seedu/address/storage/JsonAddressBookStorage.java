@@ -9,6 +9,8 @@ import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 import java.util.logging.Logger;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.exceptions.DataLoadingException;
 import seedu.address.commons.exceptions.IllegalValueException;
@@ -19,6 +21,10 @@ import seedu.address.model.ReadOnlyAddressBook;
  * A class to access AddressBook data stored as a JSON file on the hard disk.
  */
 public class JsonAddressBookStorage {
+
+    public static final String MESSAGE_UNREADABLE_FILE = "Unable to load student data.";
+    public static final String MESSAGE_INVALID_FILE =
+            "Unable to load student data. The data file may be corrupted or invalid.";
 
     private static final Logger logger = LogsCenter.getLogger(JsonAddressBookStorage.class);
 
@@ -51,8 +57,7 @@ public class JsonAddressBookStorage {
     public Optional<ReadOnlyAddressBook> readAddressBook(Path filePath) throws DataLoadingException {
         requireNonNull(filePath);
 
-        Optional<JsonSerializableAddressBook> jsonAddressBook = JsonUtil.readJsonFile(
-                filePath, JsonSerializableAddressBook.class);
+        Optional<JsonSerializableAddressBook> jsonAddressBook = readJsonAddressBook(filePath);
         if (!jsonAddressBook.isPresent()) {
             return Optional.empty();
         }
@@ -61,7 +66,26 @@ public class JsonAddressBookStorage {
             return Optional.of(jsonAddressBook.get().toModelType());
         } catch (IllegalValueException ive) {
             logger.info("Illegal values found in " + filePath + ": " + ive.getMessage());
-            throw new DataLoadingException(ive);
+            throw new DataLoadingException(MESSAGE_INVALID_FILE, ive);
+        }
+    }
+
+    /**
+     * Reads the JSON structure of the data file, distinguishing files that cannot be read from files whose
+     * contents are not valid student data JSON.
+     *
+     * @param filePath The location of the data file.
+     * @return The JSON structure, or {@code Optional.empty()} if the file does not exist.
+     * @throws DataLoadingException if the file cannot be read or is not valid student data JSON.
+     */
+    private Optional<JsonSerializableAddressBook> readJsonAddressBook(Path filePath) throws DataLoadingException {
+        try {
+            return JsonUtil.readJsonFile(filePath, JsonSerializableAddressBook.class);
+        } catch (DataLoadingException e) {
+            if (e.getCause() instanceof JsonProcessingException) {
+                throw new DataLoadingException(MESSAGE_INVALID_FILE, e);
+            }
+            throw new DataLoadingException(MESSAGE_UNREADABLE_FILE, e);
         }
     }
 

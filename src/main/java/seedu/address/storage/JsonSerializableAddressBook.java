@@ -19,7 +19,8 @@ import seedu.address.model.person.Person;
 @JsonRootName(value = "addressbook")
 class JsonSerializableAddressBook {
 
-    public static final String MESSAGE_DUPLICATE_PERSON = "Persons list contains duplicate person(s).";
+    public static final String MESSAGE_DUPLICATE_STUDENT_ID =
+            "Unable to load student data: duplicate Student ID %1$s detected.";
     public static final String MESSAGE_NULL_PERSON = "Persons list contains null person(s).";
 
     private final List<JsonAdaptedPerson> persons = new ArrayList<>();
@@ -54,7 +55,8 @@ class JsonSerializableAddressBook {
             }
             Person person = jsonAdaptedPerson.toModelType();
             if (addressBook.hasPerson(person)) {
-                throw new IllegalValueException(MESSAGE_DUPLICATE_PERSON);
+                throw new IllegalValueException(
+                        String.format(MESSAGE_DUPLICATE_STUDENT_ID, person.getStudentId()));
             }
             addressBook.addPerson(person);
         }

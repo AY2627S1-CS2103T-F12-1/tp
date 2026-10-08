@@ -8,4 +8,14 @@ public class DataLoadingException extends Exception {
         super(cause);
     }
 
+    /**
+     * Constructs a {@code DataLoadingException} with a message describing the failure to the user.
+     *
+     * @param message The user-facing description of the failure.
+     * @param cause The underlying exception.
+     */
+    public DataLoadingException(String message, Exception cause) {
+        super(message, cause);
+    }
+
 }
