@@ -132,7 +132,7 @@ public class LogicManagerTest {
     public void execute_loadingFailed_blocksModificationsAndPreservesCorruptFile() throws Exception {
         Files.writeString(storage.getAddressBookFilePath(), "invalid student data");
         assertThrows(DataLoadingException.class, storage::readAddressBook);
-        logic = new LogicManager(model, storage, false);
+        logic = new LogicManager(model, storage, false, "");
         for (String command : List.of("add n/Samuel i/A0123456B e/sam@example.com", "clear", "delete i/B1234567C",
                 "edit 1 n/Samuel", "label l/Tutorial 1 i/A0123456B")) {
             assertCommandException(command, LogicManager.MESSAGE_DATA_UNAVAILABLE);
