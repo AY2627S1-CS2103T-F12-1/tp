@@ -3,6 +3,7 @@ package seedu.address.storage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static seedu.address.storage.JsonAdaptedPerson.MESSAGE_DUPLICATE_LABEL;
 import static seedu.address.storage.JsonAdaptedPerson.MISSING_FIELD_MESSAGE_FORMAT;
 import static seedu.address.storage.JsonAdaptedPerson.MISSING_LABEL_MESSAGE;
 import static seedu.address.storage.JsonAdaptedPerson.MISSING_TAG_MESSAGE;
@@ -235,6 +236,18 @@ public class JsonAdaptedPersonTest {
                 new JsonAdaptedPerson(VALID_NAME, VALID_STUDENT_ID, VALID_EMAIL,
                         VALID_TAGS, invalidLabels, "");
         assertThrows(IllegalValueException.class, person::toModelType);
+    }
+
+    @Test
+    public void toModelType_duplicateLabelsIgnoringCase_throwsIllegalValueException() {
+        List<JsonAdaptedLabel> duplicateLabels = List.of(
+                new JsonAdaptedLabel("Tutorial 1"),
+                new JsonAdaptedLabel("tutorial 1"));
+        JsonAdaptedPerson person =
+                new JsonAdaptedPerson(VALID_NAME, VALID_STUDENT_ID, VALID_EMAIL,
+                        VALID_TAGS, duplicateLabels, "");
+
+        assertThrows(IllegalValueException.class, MESSAGE_DUPLICATE_LABEL, person::toModelType);
     }
 
     @Test

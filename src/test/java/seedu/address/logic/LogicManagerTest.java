@@ -105,6 +105,14 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_label_successPersistsLabel() throws Exception {
+        model.addPerson(ALICE);
+        logic.execute("label l/Tutorial 1 i/" + ALICE.getStudentId());
+
+        assertEquals(model.getAddressBook(), storage.readAddressBook().orElseThrow());
+    }
+
+    @Test
     public void execute_readOnlyCommands_doNotSave() throws Exception {
         JsonAddressBookStorage failingStorage = new JsonAddressBookStorage(temporaryFolder.resolve("unused.json")) {
             @Override

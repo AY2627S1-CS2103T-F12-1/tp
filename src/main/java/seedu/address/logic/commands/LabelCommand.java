@@ -43,6 +43,11 @@ public class LabelCommand extends Command {
     }
 
     @Override
+    public boolean isModifyingData() {
+        return true;
+    }
+
+    @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
 

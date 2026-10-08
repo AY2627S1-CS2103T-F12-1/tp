@@ -3,6 +3,7 @@ package seedu.address.storage;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -26,6 +27,7 @@ class JsonAdaptedPerson {
     public static final String MISSING_FIELD_MESSAGE_FORMAT = "Person's %s field is missing!";
     public static final String MISSING_TAG_MESSAGE = "Person's tag field is missing!";
     public static final String MISSING_LABEL_MESSAGE = "Person's label field is missing!";
+    public static final String MESSAGE_DUPLICATE_LABEL = "Person's labels contain duplicate label(s).";
 
     private final String name;
     private final String studentId;
@@ -91,11 +93,16 @@ class JsonAdaptedPerson {
             personTags.add(tag.toModelType());
         }
         final List<Label> personLabels = new ArrayList<>();
+        final Set<String> labelNames = new HashSet<>();
         for (JsonAdaptedLabel label : labels) {
             if (label == null) {
                 throw new IllegalValueException(MISSING_LABEL_MESSAGE);
             }
-            personLabels.add(label.toModelType());
+            Label modelLabel = label.toModelType();
+            if (!labelNames.add(modelLabel.labelName.toLowerCase(Locale.ROOT))) {
+                throw new IllegalValueException(MESSAGE_DUPLICATE_LABEL);
+            }
+            personLabels.add(modelLabel);
         }
 
         if (name == null) {
