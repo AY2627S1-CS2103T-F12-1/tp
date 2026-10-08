@@ -1,0 +1,83 @@
+@startuml
+!include style.puml
+
+skinparam arrowThickness 1.1
+skinparam arrowColor LOGIC_COLOR
+skinparam sequenceParticipantBackgroundColor LOGIC_COLOR
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as LogicManager LOGIC_COLOR
+participant ":AddressBookParser" as AddressBookParser LOGIC_COLOR
+participant ":LabelCommandParser" as LabelCommandParser LOGIC_COLOR
+participant "c:LabelCommand" as LabelCommand LOGIC_COLOR
+participant "r:CommandResult" as CommandResult LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant "m:Model" as Model MODEL_COLOR
+participant "p:Person" as Person MODEL_COLOR
+end box
+
+box Storage STORAGE_COLOR_T1
+participant ":Storage" as Storage STORAGE_COLOR
+end box
+
+[-> LogicManager : execute("label l/Tutorial 1 i/A0101010A")
+activate LogicManager
+
+LogicManager -> AddressBookParser : parseCommand(commandText)
+activate AddressBookParser
+
+create LabelCommandParser
+AddressBookParser -> LabelCommandParser
+activate LabelCommandParser
+LabelCommandParser --> AddressBookParser
+deactivate LabelCommandParser
+
+AddressBookParser -> LabelCommandParser : parse(" l/Tutorial 1 i/A0101010A")
+activate LabelCommandParser
+create LabelCommand
+LabelCommandParser -> LabelCommand
+activate LabelCommand
+LabelCommand --> LabelCommandParser
+deactivate LabelCommand
+LabelCommandParser --> AddressBookParser : c
+deactivate LabelCommandParser
+destroy LabelCommandParser
+
+AddressBookParser --> LogicManager : c
+deactivate AddressBookParser
+
+LogicManager -> LabelCommand : execute(m)
+activate LabelCommand
+LabelCommand -> Model : getAddressBook()
+activate Model
+Model --> LabelCommand
+deactivate Model
+
+LabelCommand -> Person : getLabels()
+activate Person
+Person --> LabelCommand
+deactivate Person
+
+LabelCommand -> Model : setPerson(student, labelledStudent)
+activate Model
+Model --> LabelCommand
+deactivate Model
+
+create CommandResult
+LabelCommand -> CommandResult
+activate CommandResult
+CommandResult --> LabelCommand
+deactivate CommandResult
+LabelCommand --> LogicManager : r
+deactivate LabelCommand
+
+LogicManager -> Storage : saveAddressBook(model.getAddressBook())
+activate Storage
+Storage --> LogicManager
+deactivate Storage
+
+[<-- LogicManager : r
+deactivate LogicManager
+@enduml
