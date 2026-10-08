@@ -4,9 +4,9 @@ import static java.util.Objects.requireNonNull;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_LABEL;
 
 import seedu.address.commons.util.ToStringBuilder;
-import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
 import seedu.address.model.label.Label;
+import seedu.address.model.person.Person;
 
 /**
  * Filters the displayed student list by group label.
@@ -17,6 +17,8 @@ public class FilterCommand extends Command {
 
     public static final String MESSAGE_USAGE = "Usage: " + COMMAND_WORD + " "
             + PREFIX_LABEL + "LABEL_NAME";
+    public static final String MESSAGE_STUDENTS_FOUND = "%1$d students found with label \"%2$s\".";
+    public static final String MESSAGE_NO_STUDENTS_FOUND = "No students found with label \"%1$s\".";
 
     private final Label label;
 
@@ -29,8 +31,20 @@ public class FilterCommand extends Command {
     }
 
     @Override
-    public CommandResult execute(Model model) throws CommandException {
-        throw new CommandException("Filter command execution is not implemented yet.");
+    public CommandResult execute(Model model) {
+        requireNonNull(model);
+
+        model.updateFilteredPersonList(this::hasMatchingLabel);
+        int numberOfMatchingStudents = model.getFilteredPersonList().size();
+        String resultMessage = numberOfMatchingStudents == 0
+                ? String.format(MESSAGE_NO_STUDENTS_FOUND, label.labelName)
+                : String.format(MESSAGE_STUDENTS_FOUND, numberOfMatchingStudents, label.labelName);
+        return new CommandResult(resultMessage);
+    }
+
+    private boolean hasMatchingLabel(Person person) {
+        return person.getLabels().stream()
+                .anyMatch(existingLabel -> existingLabel.labelName.equalsIgnoreCase(label.labelName));
     }
 
     @Override
