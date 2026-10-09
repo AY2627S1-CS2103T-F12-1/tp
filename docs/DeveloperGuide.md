@@ -286,6 +286,27 @@ If startup loading failed, deletion is blocked by the existing loading guard.
 Tests cover normalised IDs, visible/hidden students, an empty displayed list, nonexistent IDs, malformed parameters,
 whole-record removal from persisted JSON, filter preservation, and save failures.
 
+### Filter feature
+
+The `filter` command lets the user display only students with a matching label.
+It reuses the label prefix and label validation rules introduced by the `label`
+command, so invalid label names are rejected during parsing before the model is
+updated.
+
+Given `filter l/Discrete Math Tutorial`, `AddressBookParser` delegates parsing
+to `FilterCommandParser`. The parser returns a `FilterCommand` containing the
+validated label. When executed, `FilterCommand` creates a case-insensitive label
+predicate and calls `Model#updateFilteredPersonList`. Student records are not
+modified by filtering.
+
+The following sequence diagram shows the main command flow:
+
+![FilterCommandSequenceDiagram](images/FilterCommandSequenceDiagram.png)
+
+The following activity diagram shows the success and failure paths:
+
+![FilterCommandActivityDiagram](images/FilterCommandActivityDiagram.png)
+
 ### \[Proposed\] Undo/redo feature
 
 #### Proposed Implementation
