@@ -16,6 +16,9 @@ public class FilterCommandParser implements Parser<FilterCommand> {
     public static final String MESSAGE_MISSING_LABEL = "Missing required parameter: l/.";
     public static final String MESSAGE_EMPTY_LABEL = "Parameter l/ cannot be empty.";
     public static final String MESSAGE_DUPLICATE_LABEL = "Parameter l/ must be specified only once.";
+    public static final String MESSAGE_LABEL_CONTAINS_SLASH = "Label name cannot contain '/'.";
+    public static final String MESSAGE_LABEL_CONTAINS_ASCII_CONTROL =
+            "Label name contains disallowed ASCII control characters. Consider removing them.";
 
     /**
      * Parses the given {@code String} of arguments in the context of the FilterCommand
@@ -32,7 +35,7 @@ public class FilterCommandParser implements Parser<FilterCommand> {
 
         validateLabelPrefix(argMultimap);
 
-        Label label = ParserUtil.parseLabel(argMultimap.getValue(PREFIX_LABEL).get());
+        Label label = parseLabel(argMultimap.getValue(PREFIX_LABEL).get());
         return new FilterCommand(label);
     }
 
@@ -46,5 +49,24 @@ public class FilterCommandParser implements Parser<FilterCommand> {
         if (argMultimap.getValue(PREFIX_LABEL).get().isEmpty()) {
             throw new ParseException(MESSAGE_EMPTY_LABEL);
         }
+    }
+
+    private static Label parseLabel(String label) throws ParseException {
+        if (label.contains("/")) {
+            throw new ParseException(MESSAGE_LABEL_CONTAINS_SLASH);
+        }
+        if (containsAsciiControlCharacter(label)) {
+            throw new ParseException(MESSAGE_LABEL_CONTAINS_ASCII_CONTROL);
+        }
+        return ParserUtil.parseLabel(label);
+    }
+
+    private static boolean containsAsciiControlCharacter(String text) {
+        for (int i = 0; i < text.length(); i++) {
+            if (text.charAt(i) <= 0x1F || text.charAt(i) == 0x7F) {
+                return true;
+            }
+        }
+        return false;
     }
 }

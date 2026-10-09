@@ -38,7 +38,13 @@ public class FilterCommandParserTest {
 
     @Test
     public void parse_invalidLabel_failure() {
-        assertParseFailure(parser, " l/Tutorial/1", Label.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, " l/Tutorial/1", FilterCommandParser.MESSAGE_LABEL_CONTAINS_SLASH);
+    }
+
+    @Test
+    public void parse_labelWithAsciiControlCharacter_failure() {
+        assertParseFailure(parser, " l/Tutorial\n1",
+                FilterCommandParser.MESSAGE_LABEL_CONTAINS_ASCII_CONTROL);
     }
 
     @Test
