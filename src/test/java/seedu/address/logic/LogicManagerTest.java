@@ -114,6 +114,11 @@ public class LogicManagerTest {
 
     @Test
     public void execute_readOnlyCommands_doNotSave() throws Exception {
+        model.addPerson(new PersonBuilder().withName("Samuel Tan")
+                .withStudentId("A0101010A")
+                .withEmail("samuel@example.com")
+                .withLabels("Discrete Math Tutorial")
+                .build());
         JsonAddressBookStorage failingStorage = new JsonAddressBookStorage(temporaryFolder.resolve("unused.json")) {
             @Override
             public void saveAddressBook(ReadOnlyAddressBook addressBook) throws IOException {
@@ -124,6 +129,7 @@ public class LogicManagerTest {
                 new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json"))));
         logic.execute("list");
         logic.execute("find n/ Samuel");
+        logic.execute("filter l/Discrete Math Tutorial");
         logic.execute("help");
         logic.execute("exit");
     }
@@ -165,6 +171,17 @@ public class LogicManagerTest {
             assertEquals(List.of(BENSON), model.getFilteredPersonList());
             assertEquals(previousFile, Files.readString(storage.getAddressBookFilePath()));
         }
+    }
+
+    @Test
+    public void execute_storageFolderCannotBeCreated_preservesRecords() throws Exception {
+        Path blockingFile = Files.writeString(temporaryFolder.resolve("data"), "not a folder");
+        logic = new LogicManager(model, new StorageManager(
+                new JsonAddressBookStorage(blockingFile.resolve("addressBook.json")),
+                new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json"))));
+        assertCommandException("add n/Samuel i/A0123456B e/sam@example.com",
+                LogicManager.MESSAGE_STORAGE_LOCATION_FAILURE);
+        assertEquals(new AddressBook(), model.getAddressBook());
     }
 
     @Test
@@ -240,6 +257,78 @@ public class LogicManagerTest {
     public void execute_labelCommandNonExistentStudent_throwsCommandException() {
         assertCommandException("label l/Discrete Math Tutorial i/A0101010A",
                 "Student with ID A0101010A is not in the records. Consider using add to include the student.");
+    }
+
+    @Test
+    public void execute_filterCommandExactCase_success() throws Exception {
+        Person samuel = new PersonBuilder().withName("Samuel Tan")
+                .withStudentId("A0101010A")
+                .withEmail("samuel@example.com")
+                .withLabels("Discrete Math Tutorial")
+                .build();
+        Person alex = new PersonBuilder().withName("Alex Yeoh")
+                .withStudentId("A0101011A")
+                .withEmail("alex@example.com")
+                .withLabels("CS2103T Tutorial")
+                .build();
+        model.addPerson(samuel);
+        model.addPerson(alex);
+        AddressBook originalAddressBook = new AddressBook(model.getAddressBook());
+        Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
+        expectedModel.updateFilteredPersonList(person -> person.equals(samuel));
+
+        assertCommandSuccess("filter l/Discrete Math Tutorial",
+                "1 students found with label \"Discrete Math Tutorial\".", expectedModel);
+        assertEquals(List.of(samuel), model.getFilteredPersonList());
+        assertEquals(originalAddressBook, model.getAddressBook());
+    }
+
+    @Test
+    public void execute_filterCommandDifferentCase_success() throws Exception {
+        Person samuel = new PersonBuilder().withName("Samuel Tan")
+                .withStudentId("A0101010A")
+                .withEmail("samuel@example.com")
+                .withLabels("Discrete Math Tutorial")
+                .build();
+        Person alex = new PersonBuilder().withName("Alex Yeoh")
+                .withStudentId("A0101011A")
+                .withEmail("alex@example.com")
+                .withLabels("CS2103T Tutorial")
+                .build();
+        model.addPerson(samuel);
+        model.addPerson(alex);
+        AddressBook originalAddressBook = new AddressBook(model.getAddressBook());
+        Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
+        expectedModel.updateFilteredPersonList(person -> person.equals(samuel));
+
+        assertCommandSuccess("filter l/discrete math tutorial",
+                "1 students found with label \"discrete math tutorial\".", expectedModel);
+        assertEquals(List.of(samuel), model.getFilteredPersonList());
+        assertEquals(originalAddressBook, model.getAddressBook());
+    }
+
+    @Test
+    public void execute_filterCommandNoMatches_clearsDisplayedList() throws Exception {
+        Person samuel = new PersonBuilder().withName("Samuel Tan")
+                .withStudentId("A0101010A")
+                .withEmail("samuel@example.com")
+                .withLabels("Discrete Math Tutorial")
+                .build();
+        Person alex = new PersonBuilder().withName("Alex Yeoh")
+                .withStudentId("A0101011A")
+                .withEmail("alex@example.com")
+                .withLabels("CS2103T Tutorial")
+                .build();
+        model.addPerson(samuel);
+        model.addPerson(alex);
+        AddressBook originalAddressBook = new AddressBook(model.getAddressBook());
+        Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
+        expectedModel.updateFilteredPersonList(person -> false);
+
+        assertCommandSuccess("filter l/NonExistent",
+                "No students found with label \"NonExistent\".", expectedModel);
+        assertEquals(List.of(), model.getFilteredPersonList());
+        assertEquals(originalAddressBook, model.getAddressBook());
     }
 
     @Test
