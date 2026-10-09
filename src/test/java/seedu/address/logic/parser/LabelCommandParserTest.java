@@ -34,6 +34,23 @@ public class LabelCommandParserTest {
     }
 
     @Test
+    public void parse_labelBlank_failure() {
+        assertParseFailure(parser, " l/   i/" + VALID_STUDENT_ID, LabelCommandParser.MESSAGE_EMPTY_LABEL);
+    }
+
+    @Test
+    public void parse_labelWithSlash_failure() {
+        assertParseFailure(parser, " l/Tutorial/1 i/" + VALID_STUDENT_ID,
+                LabelCommandParser.MESSAGE_LABEL_CONTAINS_SLASH);
+    }
+
+    @Test
+    public void parse_labelWithAsciiControlCharacter_failure() {
+        assertParseFailure(parser, " l/Tutorial\n1 i/" + VALID_STUDENT_ID,
+                LabelCommandParser.MESSAGE_LABEL_CONTAINS_ASCII_CONTROL);
+    }
+
+    @Test
     public void parse_labelRepeated_failure() {
         assertParseFailure(parser, " l/Tutorial 1 l/Tutorial 2 i/" + VALID_STUDENT_ID,
                 LabelCommandParser.MESSAGE_DUPLICATE_LABEL);
