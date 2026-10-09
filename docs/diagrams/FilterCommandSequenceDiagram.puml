@@ -1,0 +1,39 @@
+@startuml
+actor User
+participant ":LogicManager" as LogicManager
+participant ":AddressBookParser" as AddressBookParser
+participant ":FilterCommandParser" as FilterCommandParser
+participant "f:FilterCommand" as FilterCommand
+participant ":Model" as Model
+participant "predicate:Predicate" as Predicate
+
+User -> LogicManager : execute("filter l/Discrete Math Tutorial")
+activate LogicManager
+
+LogicManager -> AddressBookParser : parseCommand("filter l/Discrete Math Tutorial")
+activate AddressBookParser
+
+AddressBookParser -> FilterCommandParser : parse(" l/Discrete Math Tutorial")
+activate FilterCommandParser
+FilterCommandParser --> AddressBookParser : f
+deactivate FilterCommandParser
+
+AddressBookParser --> LogicManager : f
+deactivate AddressBookParser
+
+LogicManager -> FilterCommand : execute(model)
+activate FilterCommand
+
+FilterCommand -> Model : updateFilteredPersonList(predicate)
+activate Model
+Model -> Predicate : test(person)
+Predicate --> Model : true/false
+Model --> FilterCommand
+deactivate Model
+
+FilterCommand --> LogicManager : CommandResult
+deactivate FilterCommand
+
+LogicManager --> User : result message
+deactivate LogicManager
+@enduml

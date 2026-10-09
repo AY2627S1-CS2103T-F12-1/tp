@@ -210,6 +210,22 @@ Examples:
 * `find n/alex david` returns `Alex Yeoh`, `David Li`<br>
   ![result for 'find alex david'](images/findAlexDavidResult.png)
 
+### Filtering students by label: `filter`
+
+Shows only students who have a label matching the given label name.
+
+Format: `filter l/LABEL_NAME`
+
+Examples:
+
+* `filter l/Discrete Math Tutorial`
+* `filter l/discrete math tutorial`
+
+Notes:
+
+* The match is case-insensitive. For example, `filter l/discrete math tutorial` matches students labelled `Discrete Math Tutorial`.
+* If no students have the given label, the displayed list is cleared and the app reports that no students were found.
+
 ### Deleting a student: `delete`
 
 Deletes the student with the specified Student ID, including their name, email, remark, and tags.
@@ -316,5 +332,6 @@ Action     | Format, Examples
 **Edit**   | `edit INDEX [n/NAME] [e/EMAIL] [t/TAG]...`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
 **Find**   | `find n/KEYWORD [MORE_KEYWORDS]` or `find i/KEYWORD [MORE_KEYWORDS]` or `find e/KEYWORD [MORE_KEYWORDS]`<br> e.g., `find n/James Jake`
 **Label**  | `label l/LABEL_NAME i/STUDENT_ID`<br> e.g., `label l/Discrete Math Tutorial i/A0101010A`
+**Filter** | `filter l/LABEL_NAME`<br> e.g., `filter l/Discrete Math Tutorial`
 **List**   | `list`
 **Help**   | `help`
