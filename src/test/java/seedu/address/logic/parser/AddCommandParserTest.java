@@ -28,6 +28,7 @@ import static seedu.address.testutil.TypicalPersons.BOB;
 import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.commands.AddCommand;
+import seedu.address.model.label.Label;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
@@ -38,6 +39,9 @@ import seedu.address.testutil.PersonBuilder;
 
 public class AddCommandParserTest {
     private static final String REQUIRED_FIELDS_BOB = NAME_DESC_BOB + STUDENT_ID_DESC_BOB + EMAIL_DESC_BOB;
+    private static final String VALID_LABEL = "Discrete Math Tutorial";
+    private static final String LABEL_DESC_TUTORIAL = " l/" + VALID_LABEL;
+    private static final String INVALID_LABEL_DESC = " l/Tutorial/1";
 
     private AddCommandParser parser = new AddCommandParser();
 
@@ -133,6 +137,30 @@ public class AddCommandParserTest {
                 new AddCommand(expectedPerson));
         assertParseSuccess(parser, " r/" + remark + REQUIRED_FIELDS_BOB + TAG_DESC_FRIEND + TAG_DESC_HUSBAND,
                 new AddCommand(expectedPerson));
+    }
+
+    @Test
+    public void parse_labelPresent_success() {
+        Person expectedPerson = new PersonBuilder(BOB).withTags().withLabels(VALID_LABEL).build();
+        assertParseSuccess(parser, REQUIRED_FIELDS_BOB + LABEL_DESC_TUTORIAL, new AddCommand(expectedPerson));
+        assertParseSuccess(parser, LABEL_DESC_TUTORIAL + REQUIRED_FIELDS_BOB, new AddCommand(expectedPerson));
+    }
+
+    @Test
+    public void parse_emptyLabel_failure() {
+        assertParseFailure(parser, REQUIRED_FIELDS_BOB + " l/", "Parameter l/ cannot be empty.");
+        assertParseFailure(parser, REQUIRED_FIELDS_BOB + " l/   ", "Parameter l/ cannot be empty.");
+    }
+
+    @Test
+    public void parse_repeatedLabel_failure() {
+        assertParseFailure(parser, REQUIRED_FIELDS_BOB + LABEL_DESC_TUTORIAL + " l/CS2103T Tutorial",
+                "Parameter l/ must be specified only once.");
+    }
+
+    @Test
+    public void parse_invalidLabel_failure() {
+        assertParseFailure(parser, REQUIRED_FIELDS_BOB + INVALID_LABEL_DESC, Label.MESSAGE_CONSTRAINTS);
     }
 
     @Test
