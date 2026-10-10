@@ -190,7 +190,8 @@ Design notes:
 
 ### Adding student information
 
-Command format: `add n/NAME i/STUDENT_ID e/EMAIL [r/REMARK] [t/TAG]...`.
+Command format: `add n/NAME i/STUDENT_ID e/EMAIL [r/REMARK] [l/LABEL_NAME] [t/TAG]...`.
+One optional group label can be assigned during add; it follows the same label-name rules as the `label` command.
 Tags retain their existing optional, repeatable behaviour; this feature does not change their rules.
 The accepted values and exact error messages are documented in the [User Guide](UserGuide.md#adding-a-student-add).
 
@@ -199,7 +200,7 @@ The accepted values and exact error messages are documented in the [User Guide](
 * `ArgumentTokenizer` recognises supported prefixes at the start of arguments or after whitespace, including tabs.
 * `AddCommandParser` checks line breaks, unknown alphabetic prefixes, preamble text, repeated prefixes,
   missing mandatory fields, then empty mandatory fields. Errors are reported before parsing field values.
-  Repeated/missing/empty checks follow `n/`, `i/`, `e/` order; repeated `r/` is checked last.
+  Repeated/missing/empty checks follow `n/`, `i/`, `e/` order; repeated `r/` and `l/` are checked after them.
 * `ParserUtil` trims values and converts invalid fields into `ParseException`s. Model constructors also validate,
   so records created by storage or other callers follow the same rules.
 * `Name` accepts 1–100 Unicode code points after trimming and collapsing repeated spaces, requires a letter,
@@ -210,9 +211,12 @@ The accepted values and exact error messages are documented in the [User Guide](
   of 63, and a final label of 2–63 letters. Only the domain is lowercased using `Locale.ROOT`.
 * `Remark` accepts at most 4,000 Unicode code points; command parsing trims only surrounding whitespace.
   Empty or omitted remarks become empty strings. `r/` can appear anywhere and does not consume later parameters.
+* `Label` accepts the same values as the `label` command. Empty labels are rejected, omitted labels become an empty
+  label set, and `l/` can appear anywhere without consuming later parameters.
 
-For example, `add n/  Alex   Tan i/a0123456b e/Alex@EXAMPLE.COM r/Quiz: 8/10 t/friends` creates a student with
-name `Alex Tan`, ID `A0123456B`, email `Alex@example.com`, remark `Quiz: 8/10`, and tag `friends`.
+For example, `add n/  Alex   Tan i/a0123456b e/Alex@EXAMPLE.COM l/Tutorial 1 r/Quiz: 8/10 t/friends`
+creates a student with name `Alex Tan`, ID `A0123456B`, email `Alex@example.com`, label `Tutorial 1`,
+remark `Quiz: 8/10`, and tag `friends`.
 An alphabetic token such as `x/value` is rejected even inside a remark; `8/10` and URLs remain literal text.
 A duplicate ID rejects the complete command without merging any details or remarks.
 
@@ -249,12 +253,13 @@ This prevents an empty model from overwriting unreadable or invalid records. Rea
 
 Successful adds display `Added student ID: NAME.`, followed by ` Remark: TEXT` when the remark is non-empty,
 and the total student count on the next line. The count uses the complete record list.
-`PersonCard` displays non-empty remarks with wrapping and hides the label for empty remarks.
+`PersonCard` displays labels with tags, displays non-empty remarks with wrapping, and hides the remark field for
+empty remarks.
 JSON storage preserves remarks and defaults missing/null remark fields to empty strings.
 
 #### Verification
 
-Tests cover field boundaries and normalisation, parameter errors and ordering, duplicate IDs with changed details,
+Tests cover field boundaries and normalisation, label parsing, parameter errors and ordering, duplicate IDs with changed details,
 feedback with/without remarks, JSON round trips, filtered index handling, startup loading failures, and save failures.
 Replacement-failure tests simulate an error after the temporary file is written and check that the original file,
 records, and active filter remain unchanged. They also check temporary-file cleanup and failed first saves.
