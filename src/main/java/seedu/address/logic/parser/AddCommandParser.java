@@ -1,6 +1,7 @@
 package seedu.address.logic.parser;
 
 import static seedu.address.logic.parser.CliSyntax.PREFIX_EMAIL;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_LABEL;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_REMARK;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_STUDENT_ID;
@@ -12,6 +13,7 @@ import java.util.Set;
 
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
+import seedu.address.model.label.Label;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
@@ -26,9 +28,9 @@ public class AddCommandParser implements Parser<AddCommand> {
 
     private static final List<Prefix> REQUIRED_PREFIXES = List.of(PREFIX_NAME, PREFIX_STUDENT_ID, PREFIX_EMAIL);
     private static final List<Prefix> UNIQUE_PREFIXES =
-            List.of(PREFIX_NAME, PREFIX_STUDENT_ID, PREFIX_EMAIL, PREFIX_REMARK);
+            List.of(PREFIX_NAME, PREFIX_STUDENT_ID, PREFIX_EMAIL, PREFIX_REMARK, PREFIX_LABEL);
     private static final Set<Prefix> SUPPORTED_PREFIXES =
-            Set.of(PREFIX_NAME, PREFIX_STUDENT_ID, PREFIX_EMAIL, PREFIX_TAG, PREFIX_REMARK);
+            Set.of(PREFIX_NAME, PREFIX_STUDENT_ID, PREFIX_EMAIL, PREFIX_TAG, PREFIX_REMARK, PREFIX_LABEL);
     private static final String MESSAGE_UNKNOWN_PARAMETER = "Unknown parameter: %s.";
     private static final String MESSAGE_REPEATED_PARAMETER = "Parameter %s must be specified only once.";
     private static final String MESSAGE_MISSING_PARAMETER = "Missing required parameter: %s.";
@@ -47,16 +49,17 @@ public class AddCommandParser implements Parser<AddCommand> {
         String trimmedArgs = args.trim();
         ArgumentMultimap argMultimap =
                 ArgumentTokenizer.tokenize(trimmedArgs, PREFIX_NAME, PREFIX_STUDENT_ID, PREFIX_EMAIL,
-                        PREFIX_TAG, PREFIX_REMARK);
+                        PREFIX_TAG, PREFIX_REMARK, PREFIX_LABEL);
 
         validateStructure(trimmedArgs, argMultimap);
         Name name = ParserUtil.parseName(argMultimap.getValue(PREFIX_NAME).get());
         StudentId studentId = ParserUtil.parseStudentId(argMultimap.getValue(PREFIX_STUDENT_ID).get());
         Email email = ParserUtil.parseEmail(argMultimap.getValue(PREFIX_EMAIL).get());
         Set<Tag> tagList = ParserUtil.parseTags(argMultimap.getAllValues(PREFIX_TAG));
+        Set<Label> labelList = parseLabels(argMultimap);
         Remark remark = ParserUtil.parseRemark(argMultimap.getValue(PREFIX_REMARK).orElse(""));
 
-        Person person = new Person(name, studentId, email, tagList, remark);
+        Person person = new Person(name, studentId, email, tagList, labelList, remark);
 
         return new AddCommand(person);
     }
@@ -71,6 +74,7 @@ public class AddCommandParser implements Parser<AddCommand> {
         }
         rejectRepeatedPrefixes(arguments);
         requireMandatoryValues(arguments);
+        requireOptionalLabelValue(arguments);
     }
 
     private static void rejectUnknownPrefixes(String args) throws ParseException {
@@ -99,6 +103,21 @@ public class AddCommandParser implements Parser<AddCommand> {
                 throw new ParseException(String.format(MESSAGE_EMPTY_PARAMETER, prefix));
             }
         }
+    }
+
+    private static void requireOptionalLabelValue(ArgumentMultimap arguments) throws ParseException {
+        Optional<String> label = arguments.getValue(PREFIX_LABEL);
+        if (label.isPresent() && label.orElseThrow().isEmpty()) {
+            throw new ParseException(String.format(MESSAGE_EMPTY_PARAMETER, PREFIX_LABEL));
+        }
+    }
+
+    private static Set<Label> parseLabels(ArgumentMultimap arguments) throws ParseException {
+        Optional<String> label = arguments.getValue(PREFIX_LABEL);
+        if (label.isEmpty()) {
+            return Set.of();
+        }
+        return Set.of(ParserUtil.parseLabel(label.get()));
     }
 
 }
