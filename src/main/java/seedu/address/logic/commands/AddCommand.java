@@ -2,6 +2,7 @@ package seedu.address.logic.commands;
 
 import static java.util.Objects.requireNonNull;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_EMAIL;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_LABEL;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_REMARK;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_STUDENT_ID;
@@ -23,6 +24,7 @@ public class AddCommand extends Command {
             + PREFIX_STUDENT_ID + "STUDENT_ID "
             + PREFIX_EMAIL + "EMAIL "
             + "[" + PREFIX_REMARK + "REMARK] "
+            + "[" + PREFIX_LABEL + "LABEL_NAME] "
             + "[" + PREFIX_TAG + "TAG]...";
 
     public static final String MESSAGE_INVALID_FORMAT =
@@ -34,6 +36,7 @@ public class AddCommand extends Command {
             + PREFIX_STUDENT_ID + "A0123456B "
             + PREFIX_EMAIL + "johnd@example.com "
             + PREFIX_REMARK + "Needs help with recursion "
+            + PREFIX_LABEL + "Discrete Math Tutorial "
             + PREFIX_TAG + "friends "
             + PREFIX_TAG + "owesMoney";
 
