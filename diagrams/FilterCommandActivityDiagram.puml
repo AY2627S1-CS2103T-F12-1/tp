@@ -1,0 +1,25 @@
+@startuml
+start
+
+:User enters filter command;
+:AddressBookParser creates FilterCommandParser;
+:FilterCommandParser parses l/LABEL_NAME;
+
+if (Label is valid?) then (yes)
+    :Create FilterCommand;
+else (no)
+    :Show parse error;
+    stop
+endif
+
+:FilterCommand creates label predicate;
+:Model updates filtered person list;
+
+if (Any matching students?) then (yes)
+    :Show number of matching students;
+else (no)
+    :Show no matching students message;
+endif
+
+stop
+@enduml
