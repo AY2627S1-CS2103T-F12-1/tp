@@ -53,6 +53,7 @@
         "implementation": "Implementation",
         "label-command": "Label command",
         "adding-student-information": "Adding student information",
+        "find-command": "Find command",
         "deleting-student-information": "Deleting student information",
         "filter-feature": "Filter feature",
         "proposed-undo-redo-feature": "[Proposed] Undo/redo feature",
@@ -107,7 +108,7 @@
       "src": "UserGuide.md",
       "title": "User Guide",
       "headings": {
-        "ab-3-user-guide": "AB-3 User Guide",
+        "teachassist-user-guide": "TeachAssist User Guide",
         "quick-start": "Quick start",
         "features": "Features",
         "viewing-help-help": "Viewing help: help",
