@@ -50,10 +50,19 @@ FilteredStudents --> LiveModel : complete student view restored
 deactivate FilteredStudents
 LiveModel --> ListCommand
 deactivate LiveModel
-ListCommand --> LogicManager : CommandResult("Listed all students.")
+ListCommand -> LiveModel : getFilteredPersonList()
+LiveModel --> ListCommand : students
+ListCommand -> FilteredStudents : isEmpty()
+activate FilteredStudents
+FilteredStudents --> ListCommand : isEmpty
+deactivate FilteredStudents
+alt student list is empty
+    ListCommand --> LogicManager : CommandResult("No students found.")
+else student list is not empty
+    ListCommand --> LogicManager : CommandResult("Listed all students.")
+end
 deactivate ListCommand
 
 [<-- LogicManager : result
 deactivate LogicManager
 @enduml
-
