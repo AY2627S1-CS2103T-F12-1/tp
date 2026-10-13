@@ -47,7 +47,7 @@ The following path assumes loading succeeded.
 end note
 LogicManager -> LiveModel : getAddressBook(), getUserPrefs(), getFilteredPersonListPredicate()
 LiveModel --> LogicManager : current records, preferences, and filter
-LogicManager -> PendingModel : copy records and current filter
+LogicManager -> PendingModel : new ModelManager(records, preferences); apply filter
 LogicManager -> DeleteCommand : execute(pending)
 activate DeleteCommand
 DeleteCommand -> PendingModel : getAddressBook().getPersonList()

@@ -18,7 +18,6 @@ Class Email
 Class Name
 Class Remark
 Class StudentId
-Class Tag
 Class Label
 
 Class I #FFFFFF
@@ -42,7 +41,6 @@ Person *--> Name
 Person *--> StudentId
 Person *--> Email
 Person *--> Remark
-Person *--> "*" Tag
 Person *--> "*" Label
 
 Person -[hidden]up--> I
