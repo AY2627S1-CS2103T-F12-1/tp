@@ -247,7 +247,7 @@ live model unchanged. Invalid parameters or a duplicate Student ID stop executio
 
 For example, adding a student while viewing a filtered list restores the complete list only after saving succeeds.
 If replacement fails, the filtered list remains as it was and the new student is not added.
-Read-only commands such as `find`, `filter`, `list`, `help`, and `exit` execute on the live model without saving student data.
+Read-only commands such as `find`, `list`, `help`, and `exit` execute on the live model without saving student data.
 
 #### Startup and feedback
 
@@ -272,26 +272,31 @@ records, and active filter remain unchanged. They also check temporary-file clea
 ### Find command
 
 Command format: `find n/KEYWORD [MORE_KEYWORDS]...` or `find i/KEYWORD [MORE_KEYWORDS]...`
-or `find e/KEYWORD [MORE_KEYWORDS]...`.
-Exactly one supported search field must be supplied: name, student ID, or email.
+or `find e/KEYWORD [MORE_KEYWORDS]...` or `find l/LABEL_NAME`.
+Exactly one supported search field must be supplied: name, student ID, email, or label.
 The accepted format and user-facing examples are documented in the
-[User Guide](UserGuide.md#locating-persons-by-name-student-id-or-email-find).
+[User Guide](UserGuide.md#locating-students-by-name-student-id-email-or-label-find).
 
 #### Validation and matching
 
-* `ArgumentTokenizer` recognises the supported prefixes `n/`, `i/`, and `e/`.
+* `ArgumentTokenizer` recognises the supported prefixes `n/`, `i/`, `e/`, and lowercase `l/`.
 * `FindCommandParser` validates malformed input in this order: words before the first parameter prefix, unknown
   parameter prefixes, repeated search prefixes, missing search prefixes, more than one search prefix type, and empty
-  keyword values.
-* Search keywords are split on whitespace. Multiple spaces, tabs, and line breaks between keywords are collapsed.
+  values. Label values then pass through `ParserUtil#parseLabel` and the shared `Label` validation rules.
+* Name, student ID, and email search keywords are split on whitespace. Multiple spaces, tabs, and line breaks between
+  keywords are collapsed.
 * `FindCommandParser` creates a field-specific predicate: `NameContainsKeywordsPredicate`,
-  `StudentIdContainsKeywordsPredicate`, or `EmailContainsKeywordsPredicate`.
-* Each predicate checks whether the selected field contains any keyword using `StringUtil#containsIgnoreCase`.
-  Matching is therefore case-insensitive and supports partial matches.
+  `StudentIdContainsKeywordsPredicate`, `EmailContainsKeywordsPredicate`, or `LabelMatchesPredicate`.
+* Keyword predicates check whether the selected field contains any keyword using `StringUtil#containsIgnoreCase`.
+  Matching is case-insensitive and supports partial matches.
+* `LabelMatchesPredicate` checks whether any assigned label's complete name matches using `String#equalsIgnoreCase`.
+  Label input is not split into keywords. Leading and trailing whitespace is trimmed; internal spacing is preserved.
+  Invalid labels, including names containing slashes or internal control characters, are rejected before execution.
 
 For example, `find n/alex david` creates a `NameContainsKeywordsPredicate` with keywords `alex` and `david`.
 Any student whose name contains either keyword is shown.
 `find i/a012` searches student IDs, while `find e/example.com` searches email addresses.
+`find l/discrete math tutorial` matches the complete label `Discrete Math Tutorial`, while `find l/Math` does not.
 
 #### Execution and displayed list
 
@@ -310,8 +315,12 @@ The command returns the standard listed-students feedback containing the number 
 When no records match, the filtered list becomes empty and the feedback reports zero listed students.
 The previous filter is replaced by the new search predicate.
 
-The sequence diagram below shows how a successful `find n/Alex` command is parsed and executed.
+The sequence diagram below shows how a successful `find l/Discrete Math Tutorial` command is parsed and executed.
 <puml src="diagrams/FindCommandSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `find` Command" />
+
+The activity diagram shows validation and execution for all four search fields:
+
+<puml src="diagrams/FindCommandActivityDiagram.puml" alt="Find command validation and execution" />
 
 #### Saving and startup behaviour
 
@@ -323,7 +332,10 @@ If startup loading failed, the command is still available because it does not ri
 
 Tests cover words before the first prefix, unknown prefixes, validation precedence, missing prefixes, multiple prefixes,
 duplicate prefixes, empty keyword values, name searches with multiple keywords and whitespace, student ID searches,
-email searches, zero-result execution, multi-result execution, and equality of commands with equivalent predicates.
+email searches, complete-label matching with spaces and case differences, invalid labels, zero-result execution,
+multi-result execution, replacement of previous search results, and equality of commands with equivalent predicates.
+Integration tests cover label searches after reloading saved data, read-only execution without saving, and rejection
+of the removed `filter` command without changing records, the displayed list, or the saved file.
 
 ### Deleting student information
 
@@ -362,26 +374,6 @@ The sequence diagram shows deletion by Student ID, including the save-failure pa
 
 Tests cover normalised IDs, visible/hidden students, an empty displayed list, nonexistent IDs, malformed parameters,
 whole-record removal from persisted JSON, filter preservation, and save failures.
-
-### Filter feature
-
-The `filter` command lets the user display only students with a matching label.
-It uses the `l/` prefix and the shared `Label` validation rules, so invalid label names
-are rejected during parsing before the model is updated.
-
-Given `filter l/Discrete Math Tutorial`, `AddressBookParser` delegates parsing
-to `FilterCommandParser`. The parser returns a `FilterCommand` containing the
-validated label. When executed, `FilterCommand` creates a case-insensitive label
-predicate and calls `Model#updateFilteredPersonList`. Student records are not
-modified by filtering.
-
-The following sequence diagram shows the main command flow:
-
-<puml src="diagrams/FilterCommandSequenceDiagram.puml" alt="FilterCommandSequenceDiagram" />
-
-The following activity diagram shows the success and failure paths:
-
-<puml src="diagrams/FilterCommandActivityDiagram.puml" alt="FilterCommandActivityDiagram" />
 
 ### Loading student data at startup
 
@@ -426,7 +418,7 @@ error messages. It then rejects any command whose `Command#isModifyingData` retu
 `Student data is unavailable because loading failed. Fix the data file and restart.`
 
 This prevents the empty in-memory list from being saved over the user's data file, which may still be recoverable.
-Read-only commands, such as `list`, `find`, and `filter`, still run against the empty list. Restarting is the only way
+Read-only commands, such as `list` and `find`, still run against the empty list. Restarting is the only way
 to retry loading.
 
 Saving is described in [Saving before publishing changes](#saving-before-publishing-changes).
@@ -675,7 +667,7 @@ MSS:
 
 Use case: UC02 - Find a Student
 MSS:
-1. TA enters a search command specifying a name, student ID, or email query.
+1. TA enters a `find` command specifying a name, student ID, email, or complete group label query.
 2. TeachAssist searches existing records for matches.
 3. TeachAssist displays the list of matching student records and the count of results.
    Use case ends.
@@ -688,7 +680,7 @@ MSS:
 * 1b1. TeachAssist shows an error message indicating invalid characters in the query.
 * Use case ends.
 * 2a. No student records match the search query.
-* 2a1. TeachAssist displays a message indicating no matching students were found.
+* 2a1. TeachAssist reports zero listed results.
 * 2a2. TeachAssist clears the displayed student list.
 * Use case ends.
 
@@ -696,9 +688,9 @@ MSS:
 
 Use case: UC04 - Filter Students by Group Label
 MSS:
-1. TA enters command to filter students by a specific group label.
+1. TA enters `find l/LABEL_NAME` to search for a specific complete group label.
 2. TeachAssist scans stored records for matching group labels.
-3. TeachAssist displays only the students belonging to that group label.
+3. TeachAssist displays only the students with that label, ignoring case, and reports the result count.
    Use case ends.
 
 **Extensions**
@@ -709,7 +701,7 @@ MSS:
 * 1b1. TeachAssist shows an error message indicating that the parameter must be specified only once.
 * Use case ends.
 * 2a. No students have the specified group label.
-* 2a1. TeachAssist displays a message indicating no students were found with that label.
+* 2a1. TeachAssist reports zero listed results.
 * 2a2. TeachAssist clears the displayed student list.
 * Use case ends.
 

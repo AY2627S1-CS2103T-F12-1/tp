@@ -5,20 +5,22 @@ participant ":AddressBookParser" as AddressBookParser
 participant ":FindCommandParser" as FindCommandParser
 participant "f:FindCommand" as FindCommand
 participant ":Model" as Model
-participant "predicate:Predicate" as Predicate
+participant "predicate:LabelMatchesPredicate" as Predicate
 
-User -> LogicManager : execute("find n/Alex")
+User -> LogicManager : execute("find l/Discrete Math Tutorial")
 activate LogicManager
 
-LogicManager -> AddressBookParser : parseCommand("find n/Alex")
+LogicManager -> AddressBookParser : parseCommand("find l/Discrete Math Tutorial")
 activate AddressBookParser
 
-AddressBookParser -> FindCommandParser : parse(" n/Alex")
+AddressBookParser -> FindCommandParser : parse(" l/Discrete Math Tutorial")
 activate FindCommandParser
 note right of FindCommandParser
 Validate exactly one non-empty
-n/, i/, or e/ parameter.
+n/, i/, e/, or l/ parameter.
 Reject unknown or repeated prefixes.
+Validate the complete label and
+create a LabelMatchesPredicate.
 end note
 FindCommandParser --> AddressBookParser : f
 deactivate FindCommandParser

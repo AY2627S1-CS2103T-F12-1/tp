@@ -1,0 +1,30 @@
+@startuml
+start
+
+:User enters find command;
+:AddressBookParser creates FindCommandParser;
+:Validate exactly one non-empty n/, i/, e/, or l/ parameter;
+
+if (Command structure is valid?) then (yes)
+    if (Searching by label?) then (yes)
+        :Validate complete label with ParserUtil.parseLabel;
+        if (Label is valid?) then (yes)
+            :Create LabelMatchesPredicate;
+        else (no)
+            :Show parse error;
+            stop
+        endif
+    else (no)
+        :Split keywords and create field-specific predicate;
+    endif
+else (no)
+    :Show parse error;
+    stop
+endif
+
+:Create FindCommand with predicate;
+:Model replaces filtered person list;
+:Show result count, including zero if no students match;
+
+stop
+@enduml

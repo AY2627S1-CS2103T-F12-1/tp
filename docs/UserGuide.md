@@ -159,7 +159,7 @@ Failed commands do not change existing student records or the saved file.
 
 ### Listing all students: `list`
 
-Displays every student stored in TeachAssist. If the displayed list was previously restricted by `find` or `filter`, this command restores the complete student list.
+Displays every student stored in TeachAssist. If the displayed list was previously restricted by `find`, this command restores the complete student list.
 
 Format: `list`
 
@@ -217,17 +217,22 @@ Examples:
 
 If a `dl/` label is absent, an `l/` label already exists, or an empty `l/` is combined with another label change, the edit is rejected and the student remains unchanged.
 
-### Locating persons by name, student ID, or email: `find`
+### Locating students by name, student ID, email, or label: `find`
 
-Finds persons whose name, student ID, or email matches any of the given keywords.
+Finds students whose name, student ID, or email contains any of the given keywords, or who have the specified label.
 
-Format: `find n/KEYWORD [MORE_KEYWORDS]` or `find i/KEYWORD [MORE_KEYWORDS]` or `find e/KEYWORD [MORE_KEYWORDS]`
+Format: `find n/KEYWORD [MORE_KEYWORDS]` or `find i/KEYWORD [MORE_KEYWORDS]` or `find e/KEYWORD [MORE_KEYWORDS]` or `find l/LABEL_NAME`
 
 * The search is case-insensitive; for example, `hans` matches `Hans`.
-* The search accepts exactly one prefix: `n/`, `i/`, or `e/`.
-* Partial words match; for example, `Han` matches `Hans`.
+* The search accepts exactly one prefix: `n/`, `i/`, `e/`, or lowercase `l/`. Search fields cannot be combined.
+* Name, student ID, and email searches support partial matches; for example, `Han` matches `Hans`.
+* Label searches match the complete label name. Spaces are part of the label: `find l/Discrete Math Tutorial` matches `Discrete Math Tutorial`, while `find l/Math` does not.
+* Label names follow the Label row in the [parameter rules](#parameter-rules). Leading and trailing spaces are ignored; internal spacing is preserved.
+* Each search replaces the previous results. If no students match, the displayed list is cleared and the result count is zero. Student records and the saved file are unchanged.
 
 Examples:
+
+* `find l/discrete math tutorial` returns students labelled `Discrete Math Tutorial`.
 * `find i/a03 a02` returns students whose student ids start with `a03` or `a02`
 * `find n/John` returns `john` and `John Doe`
 * `find n/tri sam` returns `tristan`, `samuel`<br>
@@ -240,29 +245,16 @@ Examples:
 | Extra words before the search parameter | `Invalid command format!` followed by the correct `find` format |
 | Unknown search parameter | `Unknown parameter: p/.` |
 | Repeated same search parameter | `Parameter n/ must be specified only once.` |
-| Missing search parameter | `Missing required parameter: n/, i/, or e/.` |
-| More than one search parameter type | `Parameter n/, i/, or e/ must be specified only once.` |
+| Missing search parameter | `Missing required parameter: n/, i/, e/, or l/.` |
+| More than one search parameter type | `Parameter n/, i/, e/, or l/ must be specified only once.` |
 | Empty search parameter | `Parameter n/ cannot be empty.` |
+| Empty label parameter | `Parameter l/ cannot be empty.` |
+| Repeated label parameter | `Parameter l/ must be specified only once.` |
+| Invalid label name | `Label names should be 1 to 60 characters long, contain at least one letter or digit, and only contain letters, digits, spaces, hyphens, underscores, apostrophes, parentheses, and periods.` |
 
 The parser checks for errors in the order of extra words before the first search parameter, unknown parameters,
-repeated parameters, missing parameters, multiple search parameter types, then empty values before searching.
+repeated parameters, missing parameters, multiple search parameter types, then empty values and label validity before searching.
 Failed commands do not change the displayed student records or the saved file.
-
-### Filtering students by label: `filter`
-
-Shows only students who have a label matching the given label name.
-
-Format: `filter l/LABEL_NAME`
-
-Examples:
-
-* `filter l/Discrete Math Tutorial`
-* `filter l/discrete math tutorial`
-
-Notes:
-
-* The match is case-insensitive. For example, `filter l/discrete math tutorial` matches students labelled `Discrete Math Tutorial`.
-* If no students have the given label, the displayed list is cleared and the app reports that no students were found.
 
 ### Deleting a student: `delete`
 
@@ -344,7 +336,7 @@ If loading fails, TeachAssist starts with an empty student list and leaves the d
 
 * Commands that change student records (`add`, `edit`, `delete`, and `clear`) are blocked with
   `Student data is unavailable because loading failed. Fix the data file and restart.`
-* Commands that do not change student records, such as `list`, `find`, `filter`, `help`, and `exit`, remain available.
+* Commands that do not change student records, such as `list`, `find`, `help`, and `exit`, remain available.
 
 To recover, close TeachAssist, fix or restore the data file, and restart. Deleting the data file makes TeachAssist start
 with an empty student list.
@@ -352,7 +344,7 @@ with an empty student list.
 ### Saving the data
 
 TeachAssist automatically saves after commands that change student records (`add`, `edit`, `delete`, and `clear`).
-You do not need to save manually. Commands such as `find`, `filter`, `list`, `help`, and `exit` do not write student data.
+You do not need to save manually. Commands such as `find`, `list`, `help`, and `exit` do not write student data.
 If saving fails, the proposed change is not applied, and existing records, the displayed filter, and the previous
 saved file remain unchanged. The application displays `Unable to save student data.`
 Storage must support atomic file replacement; unsupported storage produces the same save error.
@@ -404,7 +396,6 @@ Action     | Format, Examples
 **Clear**  | `clear`
 **Delete** | `delete i/STUDENT_ID`<br> e.g., `delete i/A0123456B`
 **Edit**   | `edit i/STUDENT_ID [n/NAME] [e/EMAIL] [r/REMARK] [l/LABEL_NAME]... [dl/LABEL_NAME]...`<br> e.g., `edit i/A0123456B dl/Tutorial 1 l/Tutorial 2`
-**Find**   | `find n/KEYWORD [MORE_KEYWORDS]` or `find i/KEYWORD [MORE_KEYWORDS]` or `find e/KEYWORD [MORE_KEYWORDS]`<br> e.g., `find n/James Jake`
-**Filter** | `filter l/LABEL_NAME`<br> e.g., `filter l/Discrete Math Tutorial`
+**Find**   | `find n/KEYWORD [MORE_KEYWORDS]` or `find i/KEYWORD [MORE_KEYWORDS]` or `find e/KEYWORD [MORE_KEYWORDS]` or `find l/LABEL_NAME`<br> e.g., `find n/James Jake` or `find l/Discrete Math Tutorial`
 **List**   | `list`
 **Help**   | `help`
