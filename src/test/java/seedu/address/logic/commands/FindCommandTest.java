@@ -17,7 +17,11 @@ import org.junit.jupiter.api.Test;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
+import seedu.address.model.label.Label;
+import seedu.address.model.person.LabelMatchesPredicate;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
+import seedu.address.model.person.Person;
+import seedu.address.testutil.PersonBuilder;
 
 /**
  * Contains integration tests (interaction with the Model) for {@code FindCommand}.
@@ -25,6 +29,33 @@ import seedu.address.model.person.NameContainsKeywordsPredicate;
 public class FindCommandTest {
     private Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
     private Model expectedModel = new ModelManager(getTypicalAddressBook(), new UserPrefs());
+
+    @Test
+    public void execute_labelSearch_replacesPreviousSearchAndListsMatches() {
+        Person first = new PersonBuilder(CARL).withLabels("Discrete Math Tutorial", "Other").build();
+        Person second = new PersonBuilder(ELLE).withLabels("discrete math tutorial").build();
+        Person unrelated = new PersonBuilder(FIONA).withLabels("Other").build();
+        model.setPerson(CARL, first);
+        model.setPerson(ELLE, second);
+        model.setPerson(FIONA, unrelated);
+        expectedModel.setPerson(CARL, first);
+        expectedModel.setPerson(ELLE, second);
+        expectedModel.setPerson(FIONA, unrelated);
+        model.updateFilteredPersonList(person -> false);
+        expectedModel.updateFilteredPersonList(person -> person.equals(first) || person.equals(second));
+
+        FindCommand command = new FindCommand(new LabelMatchesPredicate(new Label("Discrete Math Tutorial")));
+        assertCommandSuccess(command, model, String.format(MESSAGE_PERSONS_LISTED_OVERVIEW, 2), expectedModel);
+        assertEquals(List.of(first, second), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_labelSearchWithNoMatches_clearsDisplayedList() {
+        expectedModel.updateFilteredPersonList(person -> false);
+        FindCommand command = new FindCommand(new LabelMatchesPredicate(new Label("NonExistent")));
+        assertCommandSuccess(command, model, String.format(MESSAGE_PERSONS_LISTED_OVERVIEW, 0), expectedModel);
+        assertEquals(List.of(), model.getFilteredPersonList());
+    }
 
     @Test
     public void equals() {
