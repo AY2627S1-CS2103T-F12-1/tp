@@ -17,7 +17,7 @@ AddressBookParser -> FindCommandParser : parse(" n/Alex")
 activate FindCommandParser
 note right of FindCommandParser
 Validate exactly one non-empty
-n/, i/, or e/ parameter.
+n/, i/, e/, r/, or l/ parameter.
 Reject unknown or repeated prefixes.
 end note
 FindCommandParser --> AddressBookParser : f
