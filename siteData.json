@@ -117,7 +117,7 @@
         "adding-a-student-add": "Adding a student: add",
         "listing-all-students-list": "Listing all students: list",
         "editing-a-student-edit": "Editing a student: edit",
-        "locating-persons-by-name-student-id-or-email-find": "Locating persons by name, student ID, or email: find",
+        "locating-persons-by-name-student-id-email-or-remark-find": "Locating persons by name, student ID, email, or remark: find",
         "filtering-students-by-label-filter": "Filtering students by label: filter",
         "deleting-a-student-delete": "Deleting a student: delete",
         "clearing-all-entries-clear": "Clearing all entries: clear",
