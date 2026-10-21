@@ -58,7 +58,7 @@
         "find-command": "Find command",
         "deleting-student-information": "Deleting student information",
         "loading-student-data-at-startup": "Loading student data at startup",
-        "proposed-undo-redo-feature": "[Proposed] Undo/redo feature",
+        "undoing-data-changes": "Undoing data changes",
         "proposed-data-archiving": "[Proposed] Data archiving",
         "documentation-logging-testing-dev-ops": "Documentation, logging, testing, dev-ops",
         "appendix-requirements": "Appendix: Requirements",
@@ -103,6 +103,7 @@
         "testing-guide": "Testing guide",
         "running-tests": "Running tests",
         "types-of-tests": "Types of tests",
+        "manual-undo-scenario": "Manual undo scenario",
         "display-settings-and-window-usability": "Display settings and window usability"
       },
       "headingKeywords": {}
@@ -123,6 +124,7 @@
         "recording-attendance-mark": "Recording attendance: mark",
         "removing-attendance-unmark": "Removing attendance: unmark",
         "clearing-all-entries-clear": "Clearing all entries: clear",
+        "undoing-the-latest-data-change-undo": "Undoing the latest data change: undo",
         "exiting-the-program-exit": "Exiting the program: exit",
         "loading-the-data": "Loading the data",
         "saving-the-data": "Saving the data",
