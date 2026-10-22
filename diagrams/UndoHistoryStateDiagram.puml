@@ -2,26 +2,22 @@
 !include style.puml
 title Bounded destructive undo history
 
-state "Live records: C" as C
-state "History (oldest to newest): A, B" as AB
-state "Live records: D" as D
-state "History (oldest to newest): A, B, C" as ABC
-state "Live records: C" as C2
-state "History (oldest to newest): A, B" as AB2
-state "Live records: E" as E
-state "History (oldest to newest): A, B, C" as ABC2
+state "Live records: C\nHistory (oldest to newest): A, B" as BeforeChange
+state "Live records: D\nHistory (oldest to newest): A, B, C" as AfterChange
+state "Live records: C\nHistory (oldest to newest): A, B" as AfterUndo
+state "Live records: E\nHistory (oldest to newest): A, B, C" as AfterNewChange
 
-C --> D : successful normal change\nappend C after saving
-D --> C2 : undo\nsave C, then remove C from history
-C2 --> E : successful normal change\nappend C after saving
+BeforeChange --> AfterChange : successful normal change\nsave D, append C, publish D
+AfterChange --> AfterUndo : undo\nsave C, publish C, remove C
+AfterUndo --> AfterNewChange : successful normal change\nsave E, append C, publish E
 
-note right of ABC
+note bottom of AfterChange
 The newest snapshot is restored first.
-At capacity, the oldest snapshot is discarded
+At the 100-snapshot limit, discard the oldest snapshot
 before appending a new predecessor.
 end note
 
-note right of AB2
+note bottom of AfterUndo
 No forward state D is retained.
 end note
 @enduml

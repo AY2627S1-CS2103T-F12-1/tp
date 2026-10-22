@@ -7,12 +7,13 @@ participant ":LogicManager" as Logic LOGIC_COLOR
 participant ":AddressBookParser" as Parser LOGIC_COLOR
 participant ":UndoCommandParser" as UndoParser LOGIC_COLOR
 end box
+actor User
 box Model MODEL_COLOR_T1
 participant "live:Model" as Live MODEL_COLOR
 end box
 participant ":Storage" as Storage STORAGE_COLOR
 
-[-> Logic : execute("undo")
+User -> Logic : execute("undo")
 activate Logic
 Logic -> Parser : parseCommand(commandText)
 activate Parser
@@ -24,7 +25,7 @@ Parser --> Logic : UndoCommand
 deactivate Parser
 
 alt no retained snapshot
-    Logic --> [ : CommandResult("Nothing to undo.")
+    Logic --> User : CommandResult("Nothing to undo.")
 else retained snapshot exists
     Logic -> Storage : saveAddressBook(latestSnapshot)
     activate Storage
@@ -34,7 +35,7 @@ else retained snapshot exists
         Logic -> Live : setAddressBook(latestSnapshot)
         Logic -> Live : updateFilteredPersonList(showAll)
         Logic -> Logic : remove latest snapshot
-        Logic --> [ : CommandResult("Undid last change.")
+        Logic --> User : CommandResult("Undid last change.")
     else save fails
         Storage --> Logic : IOException or DataStorageLocationException
         deactivate Storage
@@ -42,7 +43,7 @@ else retained snapshot exists
         Live records and the displayed list are unchanged.
         The retained snapshot is not removed.
         end note
-        Logic --> [ : CommandException
+        Logic --> User : CommandException
     end
 end
 deactivate Logic
