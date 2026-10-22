@@ -19,6 +19,9 @@ Class Name
 Class Remark
 Class StudentId
 Class Label
+Class AttendanceRecord
+Class AttendanceReport
+Class "AttendanceReport.AttendanceEntry" as AttendanceEntry
 
 Class I #FFFFFF
 }
@@ -42,6 +45,11 @@ Person *--> StudentId
 Person *--> Email
 Person *--> Remark
 Person *--> "*" Label
+Person *--> "*" AttendanceRecord
+AttendanceRecord --> "1" Label : group
+AttendanceReport --> "1" Label : group
+AttendanceReport *--> "*" AttendanceEntry : entries
+AttendanceEntry --> "1" Person : student
 
 Person -[hidden]up--> I
 UniquePersonList -[hidden]right-> I

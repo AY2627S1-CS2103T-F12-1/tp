@@ -67,7 +67,16 @@
         "user-stories": "User stories",
         "use-cases": "Use cases",
         "non-functional-requirements": "Non-Functional Requirements",
-        "glossary": "Glossary"
+        "glossary": "Glossary",
+        "appendix-instructions-for-manual-testing": "Appendix: Instructions for manual testing",
+        "setup-and-baseline": "Setup and baseline",
+        "adding-finding-and-listing-students": "Adding, finding, and listing students",
+        "editing-students-and-labels": "Editing students and labels",
+        "marking-viewing-and-unmarking-attendance": "Marking, viewing, and unmarking attendance",
+        "deleting-clearing-and-undoing-changes": "Deleting, clearing, and undoing changes",
+        "help-exit-and-restart-persistence": "Help, exit, and restart persistence",
+        "loading-and-saving-failures": "Loading and saving failures",
+        "performance-verification": "Performance verification"
       },
       "headingKeywords": {}
     },
@@ -104,7 +113,7 @@
         "testing-guide": "Testing guide",
         "running-tests": "Running tests",
         "types-of-tests": "Types of tests",
-        "manual-undo-scenario": "Manual undo scenario",
+        "manual-testing": "Manual testing",
         "display-settings-and-window-usability": "Display settings and window usability"
       },
       "headingKeywords": {}
