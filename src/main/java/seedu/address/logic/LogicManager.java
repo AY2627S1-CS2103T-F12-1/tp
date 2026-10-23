@@ -129,6 +129,7 @@ public class LogicManager implements Logic {
      */
     private CommandResult executeUndo() throws CommandException {
         if (undoHistory.isEmpty()) {
+            logger.warning("Undo skipped: no history available.");
             return new CommandResult(UndoCommand.MESSAGE_NOTHING_TO_UNDO);
         }
 
@@ -137,6 +138,7 @@ public class LogicManager implements Logic {
         model.setAddressBook(previousAddressBook);
         model.updateFilteredPersonList(Model.PREDICATE_SHOW_ALL_PERSONS);
         undoHistory.removeLast();
+        logger.info("Undo restored previous snapshot.");
         return new CommandResult(UndoCommand.MESSAGE_SUCCESS);
     }
 
