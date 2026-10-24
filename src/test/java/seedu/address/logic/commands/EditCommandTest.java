@@ -46,6 +46,7 @@ public class EditCommandTest {
 
     @Test
     public void execute_otherFieldsEdited_preservesRemark() {
+        // EP: edit email while preserving an existing remark
         Person originalPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         Person personWithRemark = new PersonBuilder(originalPerson)
                 .withRemark("Needs help with recursion").build();
@@ -64,6 +65,7 @@ public class EditCommandTest {
 
     @Test
     public void execute_otherFieldsEdited_preservesLabels() {
+        // EP: edit email while preserving existing labels
         Person originalPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         Person personWithLabel = new PersonBuilder(originalPerson)
                 .withLabels(VALID_LABEL_TUTORIAL).build();
@@ -82,6 +84,7 @@ public class EditCommandTest {
 
     @Test
     public void execute_otherFieldsEdited_preservesAttendance() {
+        // EP: edit email while preserving attendance records
         Person original = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         AttendanceRecord record = new AttendanceRecord(LocalDate.parse("2026-10-20"), new Label("Tutorial 1"));
         Person student = new PersonBuilder(original).withAttendance(record).build();
@@ -99,6 +102,7 @@ public class EditCommandTest {
 
     @Test
     public void execute_remarkEdited_success() {
+        // EP: remark edited
         Person personToEdit = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         Person editedPerson = new PersonBuilder(personToEdit).withRemark(VALID_REMARK_BOB).build();
         EditCommand editCommand = new EditCommand(ALICE.getStudentId(),
@@ -113,6 +117,8 @@ public class EditCommandTest {
 
     @Test
     public void execute_emptyRemark_clearsRemark() {
+        // EP: empty remark
+        // BVA: zero remark characters
         Person originalPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         Person personWithRemark = new PersonBuilder(originalPerson).withRemark(VALID_REMARK_BOB).build();
         model.setPerson(originalPerson, personWithRemark);
@@ -129,6 +135,7 @@ public class EditCommandTest {
 
     @Test
     public void execute_addLabel_preservesExistingLabels() {
+        // EP: add label
         Person originalPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         Person student = new PersonBuilder(originalPerson).withLabels("Tutorial A").build();
         model.setPerson(originalPerson, student);
@@ -144,6 +151,7 @@ public class EditCommandTest {
 
     @Test
     public void execute_removeLabel_ignoresCaseAndPreservesOtherLabels() {
+        // EP: remove label
         Person originalPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         Person student = new PersonBuilder(originalPerson).withLabels("Tutorial A", "Needs Follow-up").build();
         model.setPerson(originalPerson, student);
@@ -159,6 +167,7 @@ public class EditCommandTest {
 
     @Test
     public void execute_removeAndAddLabel_renamesOneLabel() {
+        // EP: remove and add label
         Person originalPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         Person student = new PersonBuilder(originalPerson).withLabels("Tutorial A", "Needs Follow-up").build();
         model.setPerson(originalPerson, student);
@@ -173,7 +182,40 @@ public class EditCommandTest {
     }
 
     @Test
+    public void execute_removeAndAddSameLabel_changesCapitalisation() {
+        // EP: remove and add the same label with different capitalisation
+        Person original = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        Person student = new PersonBuilder(original).withLabels("Tutorial A").build();
+        model.setPerson(original, student);
+        Person editedStudent = new PersonBuilder(student).withLabels("tutorial a").build();
+        EditCommand command = new EditCommand(student.getStudentId(), new EditPersonDescriptorBuilder()
+                .withLabelsToRemove("Tutorial A").withLabelsToAdd("tutorial a").build());
+        Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
+        expectedModel.setPerson(student, editedStudent);
+
+        assertCommandSuccess(command, model,
+                String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedStudent)), expectedModel);
+    }
+
+    @Test
+    public void execute_clearAlreadyEmptyLabels_success() {
+        // EP: clear labels when the student has no labels
+        // BVA: zero existing labels
+        Person original = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        Person student = new PersonBuilder(original).withLabels().build();
+        model.setPerson(original, student);
+        EditCommand command = new EditCommand(student.getStudentId(),
+                new EditPersonDescriptorBuilder().withClearedLabels().build());
+        Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
+
+        assertCommandSuccess(command, model,
+                String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(student)), expectedModel);
+    }
+
+    @Test
     public void execute_clearLabelsAndRemark_success() {
+        // EP: clear labels and remark
+        // BVA: zero labels and remark characters after the edit
         Person originalPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         Person student = new PersonBuilder(originalPerson)
                 .withLabels("Tutorial A", "Needs Follow-up").withRemark("Meet on Monday").build();
@@ -190,6 +232,7 @@ public class EditCommandTest {
 
     @Test
     public void execute_invalidLabelOperation_preservesStudent() {
+        // EP: invalid label operations leave the student unchanged
         Person originalPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         Person student = new PersonBuilder(originalPerson).withLabels("Tutorial A", "Needs Follow-up").build();
         model.setPerson(originalPerson, student);
@@ -198,8 +241,10 @@ public class EditCommandTest {
         EditCommand duplicateAfterRemoval = new EditCommand(student.getStudentId(), new EditPersonDescriptorBuilder()
                 .withLabelsToRemove("Tutorial A").withLabelsToAdd("needs follow-up").build());
 
+        // EP: remove a label the student does not have
         assertCommandFailure(missingLabel, model,
                 String.format(EditCommand.MESSAGE_LABEL_NOT_FOUND, student.getStudentId(), "Unknown"));
+        // EP: add a case-insensitive duplicate after removing a different label
         assertCommandFailure(duplicateAfterRemoval, model,
                 String.format(EditCommand.MESSAGE_DUPLICATE_LABEL, student.getStudentId(), "needs follow-up"));
         assertEquals(student, model.getAddressBook().getPersonList().get(INDEX_FIRST_PERSON.getZeroBased()));
@@ -207,6 +252,7 @@ public class EditCommandTest {
 
     @Test
     public void execute_allFieldsSpecifiedUnfilteredList_success() {
+        // EP: all fields specified unfiltered list
         Person personToEdit = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         Person editedPerson = new PersonBuilder(personToEdit).withName(PersonBuilder.DEFAULT_NAME)
                 .withEmail(PersonBuilder.DEFAULT_EMAIL).withRemark(PersonBuilder.DEFAULT_REMARK).build();
@@ -223,6 +269,7 @@ public class EditCommandTest {
 
     @Test
     public void execute_someFieldsSpecifiedUnfilteredList_success() {
+        // EP: some fields specified unfiltered list
         Index indexLastPerson = Index.fromOneBased(model.getFilteredPersonList().size());
         Person lastPerson = model.getFilteredPersonList().get(indexLastPerson.getZeroBased());
 
@@ -243,6 +290,8 @@ public class EditCommandTest {
 
     @Test
     public void execute_noFieldSpecifiedUnfilteredList_success() {
+        // EP: no field specified unfiltered list
+        // BVA: zero requested field changes in a direct command
         EditCommand editCommand = new EditCommand(ALICE.getStudentId(), new EditPersonDescriptor());
         Person editedPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
 
@@ -255,6 +304,7 @@ public class EditCommandTest {
 
     @Test
     public void execute_filteredList_success() {
+        // EP: filtered list
         showPersonAtIndex(model, INDEX_FIRST_PERSON);
 
         Person personInFilteredList = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
@@ -272,6 +322,7 @@ public class EditCommandTest {
 
     @Test
     public void execute_sameNameAsExistingPersonUnfilteredList_success() {
+        // EP: same name as existing person unfiltered list
         Person firstPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         Person secondPerson = model.getFilteredPersonList().get(INDEX_SECOND_PERSON.getZeroBased());
         Person editedPerson = new PersonBuilder(secondPerson).withName(firstPerson.getName().fullName)
@@ -289,6 +340,7 @@ public class EditCommandTest {
 
     @Test
     public void execute_sameNameAsExistingPersonFilteredList_success() {
+        // EP: same name as existing person filtered list
         showPersonAtIndex(model, INDEX_FIRST_PERSON);
 
         Person personToEdit = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
@@ -308,6 +360,7 @@ public class EditCommandTest {
 
     @Test
     public void execute_unknownStudentId_failure() {
+        // EP: unknown student id
         StudentId unknownStudentId = new StudentId("Z1234567Z");
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withName(VALID_NAME_BOB).build();
         EditCommand editCommand = new EditCommand(unknownStudentId, descriptor);
@@ -318,6 +371,7 @@ public class EditCommandTest {
 
     @Test
     public void execute_studentHiddenByFilter_success() {
+        // EP: student hidden by filter
         showPersonAtIndex(model, INDEX_FIRST_PERSON);
         Person editedPerson = new PersonBuilder(BENSON).withName(VALID_NAME_BOB).build();
         EditCommand editCommand = new EditCommand(BENSON.getStudentId(),
@@ -333,29 +387,30 @@ public class EditCommandTest {
     public void equals() {
         final EditCommand standardCommand = new EditCommand(ALICE.getStudentId(), DESC_AMY);
 
-        // same values -> returns true
+        // EP: same Student ID and descriptor values
         EditPersonDescriptor copyDescriptor = new EditPersonDescriptor(DESC_AMY);
         EditCommand commandWithSameValues = new EditCommand(ALICE.getStudentId(), copyDescriptor);
         assertTrue(standardCommand.equals(commandWithSameValues));
 
-        // same object -> returns true
+        // EP: same object
         assertTrue(standardCommand.equals(standardCommand));
 
-        // null -> returns false
+        // EP: null
         assertFalse(standardCommand.equals(null));
 
-        // different types -> returns false
+        // EP: different type
         assertFalse(standardCommand.equals(new ClearCommand()));
 
-        // different student ID -> returns false
+        // EP: different Student ID
         assertFalse(standardCommand.equals(new EditCommand(BENSON.getStudentId(), DESC_AMY)));
 
-        // different descriptor -> returns false
+        // EP: different edit descriptor
         assertFalse(standardCommand.equals(new EditCommand(ALICE.getStudentId(), DESC_BOB)));
     }
 
     @Test
     public void toStringMethod() {
+        // EP: valid object representation
         StudentId studentId = ALICE.getStudentId();
         EditPersonDescriptor editPersonDescriptor = new EditPersonDescriptor();
         EditCommand editCommand = new EditCommand(studentId, editPersonDescriptor);

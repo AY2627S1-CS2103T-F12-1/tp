@@ -56,6 +56,7 @@ public class AddressBookParserTest {
 
     @Test
     public void parseCommand_addWithTabs_success() throws Exception {
+        // EP: add command with tab-separated parameters
         Person person = new PersonBuilder().withRemark("Quiz: 8/10.").build();
         String command = "add\tn/" + person.getName() + "\ti/" + person.getStudentId()
                 + "\te/" + person.getEmail() + "\tr/" + person.getRemark();
@@ -65,6 +66,7 @@ public class AddressBookParserTest {
 
     @Test
     public void parseCommand_addInvalidParameters_throwsSpecificErrors() {
+        // EP: add command with missing or unknown parameters
         assertThrows(ParseException.class, "Missing required parameter: i/.", ()
             -> parser.parseCommand("add n/Samuel e/samuel@example.com"));
         assertThrows(ParseException.class, "Unknown parameter: p/.", ()
@@ -73,6 +75,7 @@ public class AddressBookParserTest {
 
     @Test
     public void parseCommand_add() throws Exception {
+        // EP: valid add command dispatch
         Person person = new PersonBuilder().build();
         AddCommand command = (AddCommand) parser.parseCommand(PersonUtil.getAddCommand(person));
         assertEquals(new AddCommand(person), command);
@@ -86,6 +89,7 @@ public class AddressBookParserTest {
 
     @Test
     public void parseCommand_delete() throws Exception {
+        // EP: valid delete command dispatch with lowercase Student ID
         DeleteCommand command = (DeleteCommand) parser.parseCommand(
                 "delete\ti/a0123456b");
         assertEquals(new DeleteCommand(new StudentId("A0123456B")), command);
@@ -93,6 +97,7 @@ public class AddressBookParserTest {
 
     @Test
     public void parseCommand_deleteInvalidParameters_reportsSpecificErrors() {
+        // EP: delete command with missing or invalid ID
         assertThrows(ParseException.class, "Missing required parameter: i/.", () -> parser.parseCommand("delete"));
         assertThrows(ParseException.class, DeleteCommand.MESSAGE_INVALID_FORMAT, () -> parser.parseCommand("delete 1"));
         assertThrows(ParseException.class, StudentId.MESSAGE_CONSTRAINTS, () -> parser.parseCommand("delete i/123"));
@@ -100,6 +105,7 @@ public class AddressBookParserTest {
 
     @Test
     public void parseCommand_edit() throws Exception {
+        // EP: valid edit command dispatch
         Person person = new PersonBuilder().build();
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder(person).build();
         EditCommand command = (EditCommand) parser.parseCommand(EditCommand.COMMAND_WORD + " "

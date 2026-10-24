@@ -27,11 +27,14 @@ public class AddCommandTest {
 
     @Test
     public void constructor_nullPerson_throwsNullPointerException() {
+        // EP: null person
         assertThrows(NullPointerException.class, () -> new AddCommand(null));
     }
 
     @Test
     public void execute_personAcceptedByModel_addSuccessful() throws Exception {
+        // EP: person accepted by model
+        // BVA: add to an empty student list
         ModelStubAcceptingPersonAdded modelStub = new ModelStubAcceptingPersonAdded();
         Person validPerson = new PersonBuilder().build();
 
@@ -44,6 +47,7 @@ public class AddCommandTest {
 
     @Test
     public void execute_duplicatePerson_throwsCommandException() {
+        // EP: duplicate person
         Person validPerson = new PersonBuilder().build();
         AddCommand addCommand = new AddCommand(validPerson);
         ModelStub modelStub = new ModelStubWithPerson(validPerson);
@@ -60,25 +64,26 @@ public class AddCommandTest {
         AddCommand addAliceCommand = new AddCommand(alice);
         AddCommand addBobCommand = new AddCommand(bob);
 
-        // same object -> returns true
+        // EP: same object
         assertTrue(addAliceCommand.equals(addAliceCommand));
 
-        // same values -> returns true
+        // EP: same values
         AddCommand addAliceCommandCopy = new AddCommand(alice);
         assertTrue(addAliceCommand.equals(addAliceCommandCopy));
 
-        // different types -> returns false
+        // EP: different type
         assertFalse(addAliceCommand.equals(1));
 
-        // null -> returns false
+        // EP: null
         assertFalse(addAliceCommand.equals(null));
 
-        // different person -> returns false
+        // EP: different person
         assertFalse(addAliceCommand.equals(addBobCommand));
     }
 
     @Test
     public void toStringMethod() {
+        // EP: valid object representation
         AddCommand addCommand = new AddCommand(ALICE);
         String expected = AddCommand.class.getCanonicalName() + "{toAdd=" + ALICE + "}";
         assertEquals(expected, addCommand.toString());

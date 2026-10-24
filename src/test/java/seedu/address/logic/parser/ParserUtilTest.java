@@ -30,42 +30,49 @@ public class ParserUtilTest {
 
     @Test
     public void parseIndex_invalidInput_throwsParseException() {
+        // EP: invalid input
         assertThrows(ParseException.class, () -> ParserUtil.parseIndex("10 a"));
     }
 
     @Test
     public void parseIndex_outOfRangeInput_throwsParseException() {
+        // EP: out of range input
         assertThrows(ParseException.class, MESSAGE_INVALID_INDEX, ()
             -> ParserUtil.parseIndex(Long.toString(Integer.MAX_VALUE + 1)));
     }
 
     @Test
     public void parseIndex_validInput_success() throws Exception {
-        // No whitespaces
+        // EP: valid input
+        // EP: valid index without surrounding whitespace
         assertEquals(INDEX_FIRST_PERSON, ParserUtil.parseIndex("1"));
 
-        // Leading and trailing whitespaces
+        // EP: valid index with surrounding whitespace
         assertEquals(INDEX_FIRST_PERSON, ParserUtil.parseIndex("  1  "));
     }
 
     @Test
     public void parseName_null_throwsNullPointerException() {
+        // EP: null
         assertThrows(NullPointerException.class, () -> ParserUtil.parseName((String) null));
     }
 
     @Test
     public void parseName_invalidValue_throwsParseException() {
+        // EP: invalid value
         assertThrows(ParseException.class, () -> ParserUtil.parseName(INVALID_NAME));
     }
 
     @Test
     public void parseName_validValueWithoutWhitespace_returnsName() throws Exception {
+        // EP: valid value without whitespace
         Name expectedName = new Name(VALID_NAME);
         assertEquals(expectedName, ParserUtil.parseName(VALID_NAME));
     }
 
     @Test
     public void parseName_validValueWithWhitespace_returnsTrimmedName() throws Exception {
+        // EP: valid value with whitespace
         String nameWithWhitespace = WHITESPACE + VALID_NAME + WHITESPACE;
         Name expectedName = new Name(VALID_NAME);
         assertEquals(expectedName, ParserUtil.parseName(nameWithWhitespace));
@@ -73,6 +80,7 @@ public class ParserUtilTest {
 
     @Test
     public void parseName_unicodeAndRepeatedSpaces_returnsNormalisedName() throws Exception {
+        // EP: unicode and repeated spaces
         assertEquals("José O’Neill", ParserUtil.parseName("  José   O’Neill  ").fullName);
         String name = "A".repeat(Name.MAX_LENGTH - 2) + "   B";
         assertEquals("A".repeat(Name.MAX_LENGTH - 2) + " B", ParserUtil.parseName(name).fullName);
@@ -80,29 +88,37 @@ public class ParserUtilTest {
 
     @Test
     public void parseName_digitsOrOversizedName_throwsParseException() {
+        // EP: name contains a digit
         assertThrows(ParseException.class, Name.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseName("John 2"));
+
+        // EP: name exceeds the maximum length
+        // BVA: one character over the limit
         assertThrows(ParseException.class, Name.MESSAGE_CONSTRAINTS, ()
             -> ParserUtil.parseName("A".repeat(Name.MAX_LENGTH + 1)));
     }
 
     @Test
     public void parseStudentId_null_throwsNullPointerException() {
+        // EP: null
         assertThrows(NullPointerException.class, () -> ParserUtil.parseStudentId((String) null));
     }
 
     @Test
     public void parseStudentId_invalidValue_throwsParseException() {
+        // EP: invalid value
         assertThrows(ParseException.class, () -> ParserUtil.parseStudentId(INVALID_STUDENT_ID));
     }
 
     @Test
     public void parseStudentId_validValueWithoutWhitespace_returnsStudentId() throws Exception {
+        // EP: valid value without whitespace
         StudentId expectedStudentId = new StudentId(VALID_STUDENT_ID);
         assertEquals(expectedStudentId, ParserUtil.parseStudentId(VALID_STUDENT_ID));
     }
 
     @Test
     public void parseStudentId_validValueWithWhitespace_returnsTrimmedStudentId() throws Exception {
+        // EP: valid value with whitespace
         String studentIdWithWhitespace = WHITESPACE + VALID_STUDENT_ID.toLowerCase() + WHITESPACE;
         StudentId expectedStudentId = new StudentId(VALID_STUDENT_ID);
         assertEquals(expectedStudentId, ParserUtil.parseStudentId(studentIdWithWhitespace));
@@ -110,22 +126,26 @@ public class ParserUtilTest {
 
     @Test
     public void parseEmail_null_throwsNullPointerException() {
+        // EP: null
         assertThrows(NullPointerException.class, () -> ParserUtil.parseEmail((String) null));
     }
 
     @Test
     public void parseEmail_invalidValue_throwsParseException() {
+        // EP: invalid value
         assertThrows(ParseException.class, () -> ParserUtil.parseEmail(INVALID_EMAIL));
     }
 
     @Test
     public void parseEmail_validValueWithoutWhitespace_returnsEmail() throws Exception {
+        // EP: valid value without whitespace
         Email expectedEmail = new Email(VALID_EMAIL);
         assertEquals(expectedEmail, ParserUtil.parseEmail(VALID_EMAIL));
     }
 
     @Test
     public void parseEmail_validValueWithWhitespace_returnsTrimmedEmail() throws Exception {
+        // EP: valid value with whitespace
         String emailWithWhitespace = WHITESPACE + VALID_EMAIL + WHITESPACE;
         Email expectedEmail = new Email(VALID_EMAIL);
         assertEquals(expectedEmail, ParserUtil.parseEmail(emailWithWhitespace));
@@ -133,55 +153,72 @@ public class ParserUtilTest {
 
     @Test
     public void parseEmail_uppercaseDomain_returnsNormalisedEmail() throws Exception {
+        // EP: uppercase domain
         assertEquals("Rachel+Quiz@example.com", ParserUtil.parseEmail("  Rachel+Quiz@EXAMPLE.COM  ").value);
     }
 
     @Test
     public void parseEmail_invalidDomainOrOversizedLocalPart_throwsParseException() {
+        // EP: email lacks a dotted domain
         assertThrows(ParseException.class, Email.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseEmail("a@localhost"));
+
+        // EP: local part exceeds the maximum length
+        // BVA: 65 characters in the local part
         assertThrows(ParseException.class, Email.MESSAGE_CONSTRAINTS, ()
             -> ParserUtil.parseEmail("a".repeat(65) + "@example.com"));
     }
 
     @Test
     public void parseRemark_null_throwsNullPointerException() {
+        // EP: null
         assertThrows(NullPointerException.class, () -> ParserUtil.parseRemark(null));
     }
 
     @Test
     public void parseRemark_empty_returnsEmptyRemark() throws Exception {
+        // EP: empty
+        // BVA: zero input characters
         assertEquals(new Remark(""), ParserUtil.parseRemark(""));
     }
 
     @Test
     public void parseRemark_whitespaceOnly_returnsEmptyRemark() throws Exception {
+        // EP: whitespace only
+        // BVA: zero characters after trimming
         assertEquals(new Remark(""), ParserUtil.parseRemark(WHITESPACE));
     }
 
     @Test
     public void parseRemark_validValueWithoutWhitespace_returnsRemark() throws Exception {
+        // EP: valid value without whitespace
         assertEquals(new Remark(VALID_REMARK), ParserUtil.parseRemark(VALID_REMARK));
     }
 
     @Test
     public void parseRemark_validValueWithWhitespace_returnsTrimmedRemark() throws Exception {
+        // EP: valid value with whitespace
         assertEquals(new Remark(VALID_REMARK), ParserUtil.parseRemark(WHITESPACE + VALID_REMARK + WHITESPACE));
     }
 
     @Test
     public void parseRemark_internalWhitespaceAndCase_preservesText() throws Exception {
+        // EP: internal whitespace and case
         String remark = "Needs  HELP\twith recursion. Quiz: 8/10!";
         assertEquals(new Remark(remark), ParserUtil.parseRemark(WHITESPACE + remark + WHITESPACE));
     }
 
     @Test
     public void parseRemark_maximumLengthAfterTrimming_returnsRemark() throws Exception {
+        // EP: valid remark at the maximum length after trimming
+        // BVA: 4000 code points
         String remark = "x".repeat(Remark.MAX_LENGTH);
         assertEquals(new Remark(remark), ParserUtil.parseRemark(WHITESPACE + remark + WHITESPACE));
     }
 
     @Test
     public void parseRemark_overMaximumLengthAfterTrimming_throwsParseException() {
+        // EP: remark exceeds the maximum length after trimming
+        // BVA: 4001 code points
         String remark = "x".repeat(Remark.MAX_LENGTH + 1);
         assertThrows(ParseException.class, Remark.MESSAGE_CONSTRAINTS, ()
             -> ParserUtil.parseRemark(WHITESPACE + remark + WHITESPACE));
@@ -189,29 +226,36 @@ public class ParserUtilTest {
 
     @Test
     public void parseRemark_supplementaryUnicode_countsCodePoints() throws Exception {
+        // EP: supplementary Unicode at the code-point limit
         String remark = "\uD83D\uDE00".repeat(Remark.MAX_LENGTH);
         assertEquals(new Remark(remark), ParserUtil.parseRemark(WHITESPACE + remark + WHITESPACE));
+        // EP: supplementary Unicode over the code-point limit
+        // BVA: one code point over the maximum
         assertThrows(ParseException.class, Remark.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseRemark(remark + "x"));
     }
 
     @Test
     public void parseLabel_null_throwsNullPointerException() {
+        // EP: null
         assertThrows(NullPointerException.class, () -> ParserUtil.parseLabel(null));
     }
 
     @Test
     public void parseLabel_invalidValue_throwsParseException() {
+        // EP: invalid value
         assertThrows(ParseException.class, () -> ParserUtil.parseLabel(INVALID_LABEL));
     }
 
     @Test
     public void parseLabel_validValueWithoutWhitespace_returnsLabel() throws Exception {
+        // EP: valid value without whitespace
         Label expectedLabel = new Label(VALID_LABEL);
         assertEquals(expectedLabel, ParserUtil.parseLabel(VALID_LABEL));
     }
 
     @Test
     public void parseLabel_validValueWithWhitespace_returnsTrimmedLabel() throws Exception {
+        // EP: valid value with whitespace
         String labelWithWhitespace = WHITESPACE + VALID_LABEL + WHITESPACE;
         Label expectedLabel = new Label(VALID_LABEL);
         assertEquals(expectedLabel, ParserUtil.parseLabel(labelWithWhitespace));

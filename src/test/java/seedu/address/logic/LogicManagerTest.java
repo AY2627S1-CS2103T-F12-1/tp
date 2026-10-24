@@ -238,6 +238,7 @@ public class LogicManagerTest {
 
     @Test
     public void execute_deleteHiddenStudent_preservesFilterAndPersists() throws Exception {
+        // EP: delete a student hidden by the active filter
         model.addPerson(ALICE);
         model.addPerson(BENSON);
         logic.execute("find n/Benson");
@@ -369,6 +370,7 @@ public class LogicManagerTest {
 
     @Test
     public void execute_delete_removesEntireStudentRecordFromSavedData() throws Exception {
+        // EP: delete an existing student and persist the removal
         Person student = new PersonBuilder().withStudentId("A0123456B").withName("Alex Tan")
                 .withEmail("alex@example.com").withRemark("Weak in recursion.").build();
         model.addPerson(student);
@@ -381,6 +383,7 @@ public class LogicManagerTest {
 
     @Test
     public void execute_deleteInvalidOrUnknownId_preservesRecordsAndSavedFile() throws Exception {
+        // EP: invalid or unknown delete ID leaves data unchanged
         model.addPerson(ALICE);
         model.updateFilteredPersonList(new NameContainsKeywordsPredicate(List.of("Alice")));
         storage.saveAddressBook(model.getAddressBook());
@@ -404,6 +407,7 @@ public class LogicManagerTest {
 
     @Test
     public void execute_add_successSavesBeforePublishing() throws Exception {
+        // EP: add a valid student and persist before publishing
         CommandResult result = logic.execute("add n/Samuel i/a0123456b e/Sam@EXAMPLE.COM r/Quiz: 8/10.");
         assertEquals("Added student A0123456B: Samuel. Remark: Quiz: 8/10.\n1 student listed.",
                 result.getFeedbackToUser());
@@ -413,6 +417,7 @@ public class LogicManagerTest {
 
     @Test
     public void execute_addWithLabel_persistsAndFindsAfterReload() throws Exception {
+        // EP: add a student with a label and reload
         model.addPerson(ALICE);
         logic.execute("add n/Samuel i/A0101010A e/samuel@example.com l/Tutorial 1");
         Person expectedStudent = new PersonBuilder().withName("Samuel")
@@ -428,6 +433,7 @@ public class LogicManagerTest {
 
     @Test
     public void execute_editUnicodeEquivalentLabel_keepsSavedDataReadable() throws Exception {
+        // EP: edit with a Unicode-equivalent label fails without corrupting saved data
         String studentId = "A0123456B";
         String storedLabel = "\u0130stanbul";
         String equivalentLabel = "i\u0307stanbul";
@@ -469,6 +475,7 @@ public class LogicManagerTest {
 
     @Test
     public void execute_loadingFailed_blocksModificationsAndPreservesCorruptFile() throws Exception {
+        // EP: data load failure blocks modifying commands
         Files.writeString(storage.getAddressBookFilePath(), "invalid student data");
         assertThrows(DataLoadingException.class, storage::readAddressBook);
         logic = new LogicManager(model, storage, false, "");
@@ -483,6 +490,7 @@ public class LogicManagerTest {
 
     @Test
     public void execute_replacementFails_preservesRecordsFileAndActiveFilter() throws Exception {
+        // EP: failed save preserves student records and filter
         model.addPerson(ALICE);
         model.addPerson(BENSON);
         model.updateFilteredPersonList(new NameContainsKeywordsPredicate(List.of("Benson")));
@@ -509,6 +517,7 @@ public class LogicManagerTest {
 
     @Test
     public void execute_storageFolderCannotBeCreated_preservesRecords() throws Exception {
+        // EP: unwritable storage folder preserves student records
         Path blockingFile = Files.writeString(temporaryFolder.resolve("data"), "not a folder");
         logic = new LogicManager(model, new StorageManager(
                 new JsonAddressBookStorage(blockingFile.resolve("addressBook.json")),
@@ -520,6 +529,7 @@ public class LogicManagerTest {
 
     @Test
     public void execute_deleteAfterFind_usesStudentIdAndPersists() throws Exception {
+        // EP: delete by Student ID after filtering
         model.addPerson(ALICE);
         model.addPerson(BENSON);
         logic.execute("find n/Benson");
@@ -532,12 +542,14 @@ public class LogicManagerTest {
 
     @Test
     public void execute_invalidCommandFormat_throwsParseException() {
+        // EP: malformed command text
         String invalidCommand = "uicfhmowqewca";
         assertParseException(invalidCommand, MESSAGE_UNKNOWN_COMMAND);
     }
 
     @Test
     public void execute_commandExecutionError_throwsCommandException() {
+        // EP: well-formed command with execution error
         String deleteCommand = "delete i/Z9999999Z";
         assertCommandException(deleteCommand,
                 "Student with ID Z9999999Z is not in the records.");
@@ -545,6 +557,7 @@ public class LogicManagerTest {
 
     @Test
     public void execute_validCommand_success() throws Exception {
+        // EP: valid command executes successfully
         String listCommand = ListCommand.COMMAND_WORD;
         assertCommandSuccess(listCommand, ListCommand.MESSAGE_NO_STUDENTS_FOUND, model);
     }

@@ -18,35 +18,35 @@ public class EditPersonDescriptorTest {
 
     @Test
     public void equals() {
-        // same values -> returns true
+        // EP: same field and label-change values
         EditPersonDescriptor descriptorWithSameValues = new EditPersonDescriptor(DESC_AMY);
         assertTrue(DESC_AMY.equals(descriptorWithSameValues));
 
-        // same object -> returns true
+        // EP: same object
         assertTrue(DESC_AMY.equals(DESC_AMY));
 
-        // null -> returns false
+        // EP: null
         assertFalse(DESC_AMY.equals(null));
 
-        // different types -> returns false
+        // EP: different type
         assertFalse(DESC_AMY.equals(5));
 
-        // different values -> returns false
+        // EP: different values
         assertFalse(DESC_AMY.equals(DESC_BOB));
 
-        // different name -> returns false
+        // EP: different name
         EditPersonDescriptor editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).withName(VALID_NAME_BOB).build();
         assertFalse(DESC_AMY.equals(editedAmy));
 
-        // different email -> returns false
+        // EP: different email
         editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).withEmail(VALID_EMAIL_BOB).build();
         assertFalse(DESC_AMY.equals(editedAmy));
 
-        // different remark -> returns false
+        // EP: different remark
         editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).withRemark(VALID_REMARK_BOB).build();
         assertFalse(DESC_AMY.equals(editedAmy));
 
-        // different label changes -> returns false
+        // EP: different label additions, removals, or clearing flag
         editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).withLabelsToAdd("Tutorial A").build();
         assertFalse(DESC_AMY.equals(editedAmy));
         editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).withLabelsToRemove("Tutorial A").build();
@@ -58,6 +58,7 @@ public class EditPersonDescriptorTest {
 
     @Test
     public void toStringMethod() {
+        // EP: valid object representation
         EditPersonDescriptor editPersonDescriptor = new EditPersonDescriptor();
         String expected = EditPersonDescriptor.class.getCanonicalName() + "{name="
                 + editPersonDescriptor.getName().orElse(null) + ", email="

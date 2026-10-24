@@ -30,6 +30,7 @@ public class AddCommandIntegrationTest {
 
     @Test
     public void execute_newPerson_success() {
+        // EP: new person
         Person validPerson = new PersonBuilder().build();
 
         Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
@@ -43,6 +44,7 @@ public class AddCommandIntegrationTest {
 
     @Test
     public void execute_duplicatePerson_throwsCommandException() {
+        // EP: duplicate person
         Person personInList = model.getAddressBook().getPersonList().get(0);
         assertCommandFailure(new AddCommand(personInList), model,
                 String.format(AddCommand.MESSAGE_DUPLICATE_PERSON, personInList.getStudentId()));
@@ -50,6 +52,7 @@ public class AddCommandIntegrationTest {
 
     @Test
     public void execute_remarkPresent_displaysRemarkAndTotalCount() {
+        // EP: remark present
         model.updateFilteredPersonList(new NameContainsKeywordsPredicate(List.of("Alice")));
         Person student = new PersonBuilder().withName("Alex Tan").withStudentId("a0123456b")
                 .withRemark("Quiz 1: 8/10.  Weak in recursion.").build();
@@ -62,6 +65,7 @@ public class AddCommandIntegrationTest {
 
     @Test
     public void execute_sameIdDifferentDetails_rejectsWithoutMerging() {
+        // EP: same id different details
         Person existing = model.getAddressBook().getPersonList().get(0);
         Person duplicate = new PersonBuilder(existing).withStudentId(existing.getStudentId().value.toLowerCase())
                 .withName("Another Student").withEmail("another@example.com").withRemark("New remark").build();
