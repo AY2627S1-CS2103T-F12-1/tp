@@ -19,6 +19,15 @@ public class MessagesTest {
     }
 
     @Test
+    public void format_multipleLabels_listsLabelsInDisplayOrder() {
+        // EP: labels are listed alphabetically ignoring case, not in set order (#209)
+        Person person = new PersonBuilder().withLabels("Zeta", "alpha", "Lab B").build();
+
+        assertEquals("Amy Bee; Student ID: A0000000A; Email: amy@gmail.com; Labels: [alpha][Lab B][Zeta]",
+                Messages.format(person));
+    }
+
+    @Test
     public void format_emptyRemark_omitsRemark() {
         // Boundary: an empty remark adds no remark section
         Person person = new PersonBuilder().withLabels("Tutorial 1").build();

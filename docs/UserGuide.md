@@ -243,7 +243,8 @@ Edited student: John Doe; Student ID: A0123456B; Email: johndoe@example.com; Lab
 
 The feedback lists the updated name, Student ID, email, and labels, followed by `; Remark: REMARK` when the student has
 a remark. For example, `edit i/A0123456B r/Needs help with recursion` reports
-`...; Labels: [Tutorial 1]; Remark: Needs help with recursion`. Multiple labels may be displayed in any order.
+`...; Labels: [Tutorial 1]; Remark: Needs help with recursion`. Labels are listed alphabetically, ignoring case,
+as on the student card.
 
 #### Errors
 

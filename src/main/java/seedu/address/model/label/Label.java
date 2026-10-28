@@ -3,6 +3,7 @@ package seedu.address.model.label;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.AppUtil.checkArgument;
 
+import java.util.Comparator;
 import java.util.Locale;
 
 /**
@@ -15,6 +16,11 @@ public class Label {
     public static final String MESSAGE_CONSTRAINTS = "Label names should be 1 to 60 characters long, "
             + "contain at least one letter or digit, and only contain letters, digits, spaces, hyphens, "
             + "underscores, apostrophes, parentheses, and periods.";
+
+    /** Display order: by name ignoring case, as labels are matched, with the exact name breaking ties. */
+    public static final Comparator<Label> DISPLAY_ORDER = Comparator
+            .comparing((Label label) -> label.labelName.toLowerCase(Locale.ROOT))
+            .thenComparing(label -> label.labelName);
 
     public final String labelName;
 

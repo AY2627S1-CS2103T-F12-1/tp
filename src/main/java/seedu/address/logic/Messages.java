@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import seedu.address.logic.parser.Prefix;
+import seedu.address.model.label.Label;
 import seedu.address.model.person.Person;
 
 /**
@@ -49,7 +50,7 @@ public class Messages {
                 .append("; Email: ")
                 .append(person.getEmail())
                 .append("; Labels: ");
-        person.getLabels().forEach(builder::append);
+        person.getLabels().stream().sorted(Label.DISPLAY_ORDER).forEach(builder::append);
         if (!person.getRemark().value.isEmpty()) {
             builder.append("; Remark: ").append(person.getRemark());
         }
