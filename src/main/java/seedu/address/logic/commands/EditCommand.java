@@ -12,11 +12,12 @@ import static seedu.address.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Logger;
 
+import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.util.CollectionUtil;
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.Messages;
@@ -54,6 +55,7 @@ public class EditCommand extends Command {
     public static final String MESSAGE_STUDENT_NOT_FOUND = "Student with ID %s is not in the records.";
     public static final String MESSAGE_LABEL_NOT_FOUND = "Student %1$s does not have label \"%2$s\".";
     public static final String MESSAGE_DUPLICATE_LABEL = "Student %1$s already has label \"%2$s\".";
+    private static final Logger logger = LogsCenter.getLogger(EditCommand.class);
 
     private final StudentId targetStudentId;
     private final EditPersonDescriptor editPersonDescriptor;
@@ -88,11 +90,14 @@ public class EditCommand extends Command {
         Person editedPerson = createEditedPerson(personToEdit, editPersonDescriptor);
 
         if (!personToEdit.isSamePerson(editedPerson) && model.hasPerson(editedPerson)) {
+            logger.warning("Edit rejected: duplicate student ID " + editedPerson.getStudentId() + ".");
             throw new CommandException(MESSAGE_DUPLICATE_PERSON);
         }
 
         model.setPerson(personToEdit, editedPerson);
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
+        assert model.hasPerson(editedPerson);
+        logger.info("Edited student ID " + targetStudentId + ".");
         return new CommandResult(String.format(MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson)));
     }
 
@@ -102,10 +107,14 @@ public class EditCommand extends Command {
      * @throws CommandException if no student has the target Student ID.
      */
     private Person findStudent(Model model) throws CommandException {
+        assert model != null;
         return model.getAddressBook().getPersonList().stream()
                 .filter(person -> person.getStudentId().equals(targetStudentId))
                 .findFirst()
-                .orElseThrow(() -> new CommandException(String.format(MESSAGE_STUDENT_NOT_FOUND, targetStudentId)));
+                .orElseThrow(() -> {
+                    logger.warning("Edit rejected: student ID " + targetStudentId + " not found.");
+                    return new CommandException(String.format(MESSAGE_STUDENT_NOT_FOUND, targetStudentId));
+                });
     }
 
     /**
@@ -125,6 +134,7 @@ public class EditCommand extends Command {
     private static Person createEditedPerson(Person personToEdit, EditPersonDescriptor editPersonDescriptor)
             throws CommandException {
         assert personToEdit != null;
+        assert editPersonDescriptor != null;
 
         Name updatedName = editPersonDescriptor.getName().orElse(personToEdit.getName());
         StudentId updatedStudentId = personToEdit.getStudentId();
@@ -148,29 +158,51 @@ public class EditCommand extends Command {
         }
 
         Set<Label> labels = new HashSet<>(person.getLabels());
-        for (Label labelToRemove : descriptor.getLabelsToRemove()) {
-            Label existingLabel = findMatchingLabel(labels, labelToRemove).orElseThrow(() ->
-                    new CommandException(String.format(MESSAGE_LABEL_NOT_FOUND,
-                            person.getStudentId(), labelToRemove.labelName)));
-            labels.remove(existingLabel);
-        }
-        for (Label labelToAdd : descriptor.getLabelsToAdd()) {
-            if (findMatchingLabel(labels, labelToAdd).isPresent()) {
-                throw new CommandException(String.format(MESSAGE_DUPLICATE_LABEL,
-                        person.getStudentId(), labelToAdd.labelName));
-            }
-            labels.add(labelToAdd);
-        }
+        removeLabels(labels, descriptor.getLabelsToRemove(), person.getStudentId());
+        addLabels(labels, descriptor.getLabelsToAdd(), person.getStudentId());
         return labels;
     }
 
+    private static void removeLabels(Set<Label> labels, List<Label> toRemove, StudentId studentId)
+            throws CommandException {
+        assert labels != null;
+        assert toRemove != null;
+        assert studentId != null;
+
+        for (Label labelToRemove : toRemove) {
+            Label existingLabel = findMatchingLabel(labels, labelToRemove).orElseThrow(() -> {
+                logger.warning("Edit rejected: label " + labelToRemove.labelName + " not found for "
+                        + studentId + ".");
+                return new CommandException(String.format(MESSAGE_LABEL_NOT_FOUND,
+                        studentId, labelToRemove.labelName));
+            });
+            labels.remove(existingLabel);
+        }
+    }
+
+    private static void addLabels(Set<Label> labels, List<Label> toAdd, StudentId studentId)
+            throws CommandException {
+        assert labels != null;
+        assert toAdd != null;
+        assert studentId != null;
+
+        for (Label labelToAdd : toAdd) {
+            if (findMatchingLabel(labels, labelToAdd).isPresent()) {
+                logger.warning("Edit rejected: duplicate label " + labelToAdd.labelName + " for "
+                        + studentId + ".");
+                throw new CommandException(String.format(MESSAGE_DUPLICATE_LABEL,
+                        studentId, labelToAdd.labelName));
+            }
+            labels.add(labelToAdd);
+        }
+    }
+
     /**
-     * Finds a label with the same name as {@code target}, ignoring case with {@link Locale#ROOT}.
+     * Finds a label with the same name as {@code target}, ignoring case.
      */
     private static Optional<Label> findMatchingLabel(Set<Label> labels, Label target) {
-        String normalizedTargetName = target.labelName.toLowerCase(Locale.ROOT);
         return labels.stream()
-                .filter(label -> label.labelName.toLowerCase(Locale.ROOT).equals(normalizedTargetName))
+                .filter(label -> label.equalsIgnoreCase(target))
                 .findFirst();
     }
 

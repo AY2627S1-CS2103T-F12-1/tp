@@ -1,5 +1,6 @@
 package seedu.address.logic.parser;
 
+import static java.util.Objects.requireNonNull;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_DATE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_LABEL;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_STUDENT_ID;
@@ -32,9 +33,11 @@ public class MarkCommandParser implements Parser<MarkCommand> {
      * @param args The non-null command arguments.
      * @return A command ready to mark attendance.
      * @throws ParseException if the command or a parameter is invalid.
+     * @throws NullPointerException if {@code args} is null.
      */
     @Override
     public MarkCommand parse(String args) throws ParseException {
+        requireNonNull(args);
         String trimmedArgs = args.trim();
         ArgumentMultimap arguments = ArgumentTokenizer.tokenize(trimmedArgs,
                 PREFIX_STUDENT_ID, PREFIX_DATE, PREFIX_LABEL);
@@ -50,18 +53,30 @@ public class MarkCommandParser implements Parser<MarkCommand> {
         if (args.contains("\n") || args.contains("\r")) {
             throw new ParseException(MarkCommand.MESSAGE_INVALID_FORMAT);
         }
+        rejectUnknownPrefixes(args);
+        if (!arguments.getPreamble().isEmpty()) {
+            throw new ParseException(MarkCommand.MESSAGE_INVALID_FORMAT);
+        }
+        rejectRepeatedPrefixes(arguments);
+        requireMandatoryValues(arguments);
+    }
+
+    private static void rejectUnknownPrefixes(String args) throws ParseException {
         Optional<Prefix> unknownPrefix = ArgumentTokenizer.findUnknownPrefix(args, SUPPORTED_PREFIXES);
         if (unknownPrefix.isPresent()) {
             throw new ParseException(String.format(MESSAGE_UNKNOWN_PARAMETER, unknownPrefix.get()));
         }
-        if (!arguments.getPreamble().isEmpty()) {
-            throw new ParseException(MarkCommand.MESSAGE_INVALID_FORMAT);
-        }
+    }
+
+    private static void rejectRepeatedPrefixes(ArgumentMultimap arguments) throws ParseException {
         for (Prefix prefix : REQUIRED_PREFIXES) {
             if (arguments.getAllValues(prefix).size() > 1) {
                 throw new ParseException(String.format(MESSAGE_REPEATED_PARAMETER, prefix));
             }
         }
+    }
+
+    private static void requireMandatoryValues(ArgumentMultimap arguments) throws ParseException {
         for (Prefix prefix : REQUIRED_PREFIXES) {
             Optional<String> value = arguments.getValue(prefix);
             if (value.isEmpty()) {

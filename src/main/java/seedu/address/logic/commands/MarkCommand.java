@@ -7,7 +7,6 @@ import static seedu.address.logic.parser.CliSyntax.PREFIX_STUDENT_ID;
 
 import java.time.LocalDate;
 import java.util.HashSet;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -70,7 +69,9 @@ public class MarkCommand extends Command {
     public CommandResult execute(Model model) throws CommandException {
         Objects.requireNonNull(model);
         Person student = findStudent(model);
+        assert student != null;
         Label matchedGroup = findStudentGroup(student);
+        assert matchedGroup != null;
         AttendanceRecord record = new AttendanceRecord(date, matchedGroup);
         if (student.getAttendance().contains(record)) {
             logger.warning("Mark rejected: attendance already recorded for student ID " + studentId + ".");
@@ -88,6 +89,7 @@ public class MarkCommand extends Command {
     }
 
     private Person findStudent(Model model) throws CommandException {
+        assert model != null;
         return model.getAddressBook().getPersonList().stream()
                 .filter(person -> person.getStudentId().equals(studentId))
                 .findFirst()
@@ -98,9 +100,9 @@ public class MarkCommand extends Command {
     }
 
     private Label findStudentGroup(Person student) throws CommandException {
-        String normalizedGroup = group.labelName.toLowerCase(Locale.ROOT);
+        assert student != null;
         return student.getLabels().stream()
-                .filter(label -> label.labelName.toLowerCase(Locale.ROOT).equals(normalizedGroup))
+                .filter(label -> label.equalsIgnoreCase(group))
                 .findFirst()
                 .orElseThrow(() -> {
                     logger.warning("Mark rejected: requested group not assigned to student ID " + studentId + ".");

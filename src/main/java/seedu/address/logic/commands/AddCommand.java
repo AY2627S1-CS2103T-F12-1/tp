@@ -71,6 +71,7 @@ public class AddCommand extends Command {
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
+        assert toAdd != null : "Student to add must not be null";
 
         if (model.hasPerson(toAdd)) {
             logger.warning("Add rejected: duplicate student ID " + toAdd.getStudentId() + ".");
@@ -78,6 +79,7 @@ public class AddCommand extends Command {
         }
 
         model.addPerson(toAdd);
+        assert model.hasPerson(toAdd) : "Model should contain the newly added student";
         logger.info("Added student ID " + toAdd.getStudentId() + ".");
         return new CommandResult(formatSuccess(model.getAddressBook().getPersonList().size()));
     }

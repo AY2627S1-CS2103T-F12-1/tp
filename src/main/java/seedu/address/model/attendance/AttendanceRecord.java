@@ -19,6 +19,10 @@ public class AttendanceRecord {
 
     /**
      * Creates an attendance record for the given date and group.
+     *
+     * @param date Date of attendance.
+     * @param group Group or class attended.
+     * @throws NullPointerException if any parameter is null.
      */
     public AttendanceRecord(LocalDate date, Label group) {
         requireAllNonNull(date, group);
@@ -48,12 +52,12 @@ public class AttendanceRecord {
         if (!(other instanceof AttendanceRecord otherRecord)) {
             return false;
         }
-        return date.equals(otherRecord.date) && normalizedGroup().equals(otherRecord.normalizedGroup());
+        return date.equals(otherRecord.date) && group.equalsIgnoreCase(otherRecord.group);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(date, normalizedGroup());
+        return Objects.hash(date, normalizedGroupName());
     }
 
     @Override
@@ -61,7 +65,7 @@ public class AttendanceRecord {
         return date + ": " + group.labelName;
     }
 
-    private String normalizedGroup() {
+    private String normalizedGroupName() {
         return group.labelName.toLowerCase(Locale.ROOT);
     }
 }

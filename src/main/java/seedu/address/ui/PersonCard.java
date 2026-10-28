@@ -56,7 +56,17 @@ public class PersonCard extends UiPart<Region> {
         person.getLabels().stream()
                 .sorted(Comparator.comparing(label -> label.labelName))
                 .forEach(label -> {
-                    Label groupBadge = new Label(label.labelName);
+                    Label groupBadge = new Label(label.labelName) {
+                        @Override
+                        protected double computePrefHeight(double width) {
+                            // FlowPane asks for height without supplying the badge's constrained width.
+                            return super.computePrefHeight(width < 0 ? labels.getWidth() : width);
+                        }
+                    };
+                    groupBadge.setWrapText(true);
+                    groupBadge.setMinWidth(0);
+                    // A single long badge must fit within the row, just like multiple short badges.
+                    groupBadge.maxWidthProperty().bind(labels.widthProperty());
                     groupBadge.getStyleClass().add("group_label_badge");
                     labels.getChildren().add(groupBadge);
                 });

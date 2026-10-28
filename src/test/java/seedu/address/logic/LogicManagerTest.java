@@ -415,6 +415,22 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void constructor_nullArguments_throwsNullPointerException() {
+        // EP: null model
+        assertThrows(NullPointerException.class, () -> new LogicManager(null, storage));
+        // EP: null storage
+        assertThrows(NullPointerException.class, () -> new LogicManager(model, null));
+        // EP: null startup message
+        assertThrows(NullPointerException.class, () -> new LogicManager(model, storage, true, null));
+    }
+
+    @Test
+    public void execute_nullCommandText_throwsNullPointerException() {
+        // EP: null commandText
+        assertThrows(NullPointerException.class, () -> logic.execute(null));
+    }
+
+    @Test
     public void execute_add_successSavesBeforePublishing() throws Exception {
         // EP: add a valid student and persist before publishing
         CommandResult result = logic.execute("add n/Samuel i/a0123456b e/Sam@EXAMPLE.COM r/Quiz: 8/10.");

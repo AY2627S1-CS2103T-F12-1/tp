@@ -28,7 +28,7 @@
         <Label fx:id="name" text="\$first" styleClass="cell_big_label"
                wrapText="true" minWidth="0" maxWidth="Infinity" HBox.hgrow="ALWAYS" />
       </HBox>
-      <FlowPane fx:id="labels" />
+      <FlowPane fx:id="labels" minWidth="0" />
       <FlowPane fx:id="studentIds" />
       <Label fx:id="email" styleClass="cell_small_label" text="\$email"
              wrapText="true" minWidth="0" maxWidth="Infinity" />

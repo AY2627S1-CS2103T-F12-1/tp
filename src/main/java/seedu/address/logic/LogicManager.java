@@ -1,5 +1,8 @@
 package seedu.address.logic;
 
+import static java.util.Objects.requireNonNull;
+import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
+
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -53,6 +56,7 @@ public class LogicManager implements Logic {
      *
      * @param model The live model.
      * @param storage The storage used for saving changes.
+     * @throws NullPointerException if any parameter is null.
      */
     public LogicManager(Model model, Storage storage) {
         this(model, storage, true, "");
@@ -65,8 +69,10 @@ public class LogicManager implements Logic {
      * @param storage The storage used for saving changes.
      * @param isStudentDataAvailable Whether startup loading succeeded or no data file existed.
      * @param startupMessage The message describing the outcome of startup loading.
+     * @throws NullPointerException if {@code model}, {@code storage}, or {@code startupMessage} is null.
      */
     public LogicManager(Model model, Storage storage, boolean isStudentDataAvailable, String startupMessage) {
+        requireAllNonNull(model, storage, startupMessage);
         this.model = model;
         this.storage = storage;
         this.isStudentDataAvailable = isStudentDataAvailable;
@@ -83,6 +89,7 @@ public class LogicManager implements Logic {
      */
     @Override
     public CommandResult execute(String commandText) throws CommandException, ParseException {
+        requireNonNull(commandText);
         logger.info("----------------[USER COMMAND][" + commandText + "]");
 
         Command command = addressBookParser.parseCommand(commandText);
@@ -100,6 +107,7 @@ public class LogicManager implements Logic {
     }
 
     private CommandResult updateDisplayedAttendance(CommandResult result) {
+        requireNonNull(result);
         if (result.getAttendanceReport().isPresent()) {
             displayedAttendance = result.getAttendanceReport().get();
             return result;
@@ -114,18 +122,24 @@ public class LogicManager implements Logic {
     }
 
     private CommandResult executeAndSave(Command command) throws CommandException {
+        requireNonNull(command);
         AddressBook previousAddressBook = new AddressBook(model.getAddressBook());
         Model pendingModel = new ModelManager(model.getAddressBook(), model.getUserPrefs());
         pendingModel.updateFilteredPersonList(model.getFilteredPersonListPredicate()::test);
         CommandResult result = command.execute(pendingModel);
         saveStudentData(pendingModel.getAddressBook());
+        recordUndoSnapshot(previousAddressBook);
+        model.setAddressBook(pendingModel.getAddressBook());
+        model.updateFilteredPersonList(pendingModel.getFilteredPersonListPredicate()::test);
+        return result;
+    }
+
+    private void recordUndoSnapshot(AddressBook previousAddressBook) {
+        requireNonNull(previousAddressBook);
         if (undoHistory.size() == MAX_UNDO_HISTORY_SIZE) {
             undoHistory.removeFirst();
         }
         undoHistory.addLast(previousAddressBook);
-        model.setAddressBook(pendingModel.getAddressBook());
-        model.updateFilteredPersonList(pendingModel.getFilteredPersonListPredicate()::test);
-        return result;
     }
 
     /**
@@ -147,6 +161,7 @@ public class LogicManager implements Logic {
     }
 
     private void saveStudentData(ReadOnlyAddressBook addressBook) throws CommandException {
+        requireNonNull(addressBook);
         try {
             storage.saveAddressBook(addressBook);
         } catch (DataStorageLocationException dsle) {
