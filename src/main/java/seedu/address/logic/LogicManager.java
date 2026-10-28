@@ -128,14 +128,20 @@ public class LogicManager implements Logic {
         pendingModel.updateFilteredPersonList(model.getFilteredPersonListPredicate());
         CommandResult result = command.execute(pendingModel);
         saveStudentData(pendingModel.getAddressBook());
-        recordUndoSnapshot(previousAddressBook);
+        recordUndoSnapshot(previousAddressBook, pendingModel.getAddressBook());
         model.setAddressBook(pendingModel.getAddressBook());
         model.updateFilteredPersonList(pendingModel.getFilteredPersonListPredicate());
         return result;
     }
 
-    private void recordUndoSnapshot(AddressBook previousAddressBook) {
-        requireNonNull(previousAddressBook);
+    /**
+     * Retains {@code previousAddressBook} for undo, unless the command left the student records unchanged.
+     */
+    private void recordUndoSnapshot(AddressBook previousAddressBook, ReadOnlyAddressBook updatedAddressBook) {
+        requireAllNonNull(previousAddressBook, updatedAddressBook);
+        if (previousAddressBook.equals(updatedAddressBook)) {
+            return;
+        }
         if (undoHistory.size() == MAX_UNDO_HISTORY_SIZE) {
             undoHistory.removeFirst();
         }

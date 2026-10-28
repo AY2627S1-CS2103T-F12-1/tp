@@ -551,6 +551,8 @@ Undid last change.
 
 * TeachAssist retains at most 100 earlier student-data snapshots for the current session. The snapshots contain the
   complete student records, including remarks, labels, and attendance.
+* A command that succeeds without changing the records, such as `clear` on an empty list or an `edit` that repeats the
+  current values, is not recorded. `undo` then reverses the latest command that did change the records.
 * A successful undo is destructive: it discards the state being reversed. There is no redo command or forward history.
   A later successful data change records the then-current state as a new predecessor.
 * Restoring a snapshot resets the displayed list to all students. It does not restore a previous `find` result, window

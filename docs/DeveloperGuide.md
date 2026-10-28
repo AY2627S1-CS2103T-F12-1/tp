@@ -611,6 +611,8 @@ History begins empty on every application start and is never written to JSON.
 Before a normal data-changing command runs, `LogicManager` copies the live address book. It executes the command on
 the existing pending model and saves that proposed address book. Only after the save succeeds does it append the
 pre-change snapshot, discarding the oldest snapshot first when the deque is full, and publish the pending model.
+If the saved address book equals the snapshot, as for `clear` on an empty list, no snapshot is appended, so `undo`
+never reports a change it cannot show.
 Thus parsing, validation, execution, or save failures leave the live records and undo history unchanged.
 
 For `undo`, `LogicManager` examines the newest snapshot without removing it. It saves that snapshot before replacing

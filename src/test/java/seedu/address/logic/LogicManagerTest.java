@@ -141,6 +141,27 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_undoAfterUnchangedCommands_skipsThemAndRevertsLastRealChange() throws Exception {
+        // EP: commands that leave the records unchanged add no undo snapshot (#207)
+        model.addPerson(ALICE);
+        AddressBook originalAddressBook = new AddressBook(model.getAddressBook());
+        logic.execute("add n/Samuel i/A0123456B e/samuel@example.com");
+        logic.execute("edit i/A0123456B n/Samuel");
+
+        assertEquals(UndoCommand.MESSAGE_SUCCESS, logic.execute("undo").getFeedbackToUser());
+        assertEquals(originalAddressBook, model.getAddressBook());
+        assertEquals(UndoCommand.MESSAGE_NOTHING_TO_UNDO, logic.execute("undo").getFeedbackToUser());
+    }
+
+    @Test
+    public void execute_undoAfterClearingEmptyList_reportsNothingToUndo() throws Exception {
+        // Boundary: clear on an empty list succeeds but has nothing to reverse
+        logic.execute("clear");
+
+        assertEquals(UndoCommand.MESSAGE_NOTHING_TO_UNDO, logic.execute("undo").getFeedbackToUser());
+    }
+
+    @Test
     public void execute_undoSaveFailure_preservesDataFileViewAndHistory() throws Exception {
         ToggleableJsonAddressBookStorage addressBookStorage =
                 new ToggleableJsonAddressBookStorage(temporaryFolder.resolve("addressBook.json"));
