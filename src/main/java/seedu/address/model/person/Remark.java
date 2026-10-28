@@ -15,7 +15,9 @@ public class Remark {
     /**
      * Constructs a {@code Remark} from non-null text of at most {@link #MAX_LENGTH} Unicode code points.
      *
+     * @param remark The remark text.
      * @throws IllegalArgumentException if the text exceeds the length limit.
+     * @throws NullPointerException if {@code remark} is null.
      */
     public Remark(String remark) {
         requireNonNull(remark);
@@ -25,6 +27,10 @@ public class Remark {
 
     /**
      * Returns whether the non-null text contains at most {@link #MAX_LENGTH} Unicode code points.
+     *
+     * @param test The string to check.
+     * @return True if the text does not exceed the maximum code point limit.
+     * @throws NullPointerException if {@code test} is null.
      */
     public static boolean isValidRemark(String test) {
         requireNonNull(test);

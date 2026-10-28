@@ -3,6 +3,8 @@ package seedu.address.model.label;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.AppUtil.checkArgument;
 
+import java.util.Locale;
+
 /**
  * Represents a group label assigned to a student.
  * Guarantees: immutable; name is valid as declared in {@link #isValidLabelName(String)}
@@ -65,6 +67,28 @@ public class Label {
         return characterType == Character.NON_SPACING_MARK
                 || characterType == Character.COMBINING_SPACING_MARK
                 || characterType == Character.ENCLOSING_MARK;
+    }
+
+    /**
+     * Returns true if both labels have the same name, ignoring case with {@link Locale#ROOT}.
+     *
+     * @param other The other non-null label to compare against.
+     * @return True if both label names match ignoring case.
+     */
+    public boolean equalsIgnoreCase(Label other) {
+        requireNonNull(other);
+        return equalsIgnoreCase(other.labelName);
+    }
+
+    /**
+     * Returns true if this label's name equals {@code otherName}, ignoring case with {@link Locale#ROOT}.
+     *
+     * @param otherName The other non-null label name to compare against.
+     * @return True if the names match ignoring case.
+     */
+    public boolean equalsIgnoreCase(String otherName) {
+        requireNonNull(otherName);
+        return labelName.toLowerCase(Locale.ROOT).equals(otherName.toLowerCase(Locale.ROOT));
     }
 
     @Override
