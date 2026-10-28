@@ -92,6 +92,7 @@ class JsonAdaptedPerson {
 
     /**
      * Converts this Jackson-friendly adapted person object into the model's {@code Person} object.
+     * Trims surrounding whitespace from text fields before validation.
      *
      * @throws IllegalValueException if there were any data constraints violated in the adapted person.
      */
@@ -112,33 +113,37 @@ class JsonAdaptedPerson {
         if (name == null) {
             throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT, Name.class.getSimpleName()));
         }
-        if (!Name.isValidName(name)) {
+        final String trimmedName = name.trim();
+        if (!Name.isValidName(trimmedName)) {
             throw new IllegalValueException(Name.MESSAGE_CONSTRAINTS);
         }
-        final Name modelName = new Name(name);
+        final Name modelName = new Name(trimmedName);
 
         if (studentId == null) {
             throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT,
                     StudentId.class.getSimpleName()));
         }
-        if (!StudentId.isValidStudentId(studentId)) {
+        final String trimmedStudentId = studentId.trim();
+        if (!StudentId.isValidStudentId(trimmedStudentId)) {
             throw new IllegalValueException(StudentId.MESSAGE_CONSTRAINTS);
         }
-        final StudentId modelStudentId = new StudentId(studentId);
+        final StudentId modelStudentId = new StudentId(trimmedStudentId);
 
         if (email == null) {
             throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT, Email.class.getSimpleName()));
         }
-        if (!Email.isValidEmail(email)) {
+        final String trimmedEmail = email.trim();
+        if (!Email.isValidEmail(trimmedEmail)) {
             throw new IllegalValueException(Email.MESSAGE_CONSTRAINTS);
         }
-        final Email modelEmail = new Email(email);
+        final Email modelEmail = new Email(trimmedEmail);
 
         final Set<Label> modelLabels = new HashSet<>(personLabels);
-        if (!Remark.isValidRemark(remark)) {
+        final String trimmedRemark = remark.trim();
+        if (!Remark.isValidRemark(trimmedRemark)) {
             throw new IllegalValueException(Remark.MESSAGE_CONSTRAINTS);
         }
-        final Remark modelRemark = new Remark(remark);
+        final Remark modelRemark = new Remark(trimmedRemark);
         final Set<AttendanceRecord> modelAttendance = new HashSet<>();
         for (JsonAdaptedAttendanceRecord record : attendance) {
             if (record == null) {

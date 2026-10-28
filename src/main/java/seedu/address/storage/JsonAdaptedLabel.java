@@ -35,6 +35,7 @@ class JsonAdaptedLabel {
 
     /**
      * Converts this Jackson-friendly adapted label object into the model's {@code Label} object.
+     * Trims surrounding whitespace before validation.
      *
      * @throws IllegalValueException if there were any data constraints violated in the adapted label.
      */
@@ -42,9 +43,10 @@ class JsonAdaptedLabel {
         if (labelName == null) {
             throw new IllegalValueException(Label.MESSAGE_CONSTRAINTS);
         }
-        if (!Label.isValidLabelName(labelName)) {
+        final String trimmedLabelName = labelName.trim();
+        if (!Label.isValidLabelName(trimmedLabelName)) {
             throw new IllegalValueException(Label.MESSAGE_CONSTRAINTS);
         }
-        return new Label(labelName);
+        return new Label(trimmedLabelName);
     }
 }

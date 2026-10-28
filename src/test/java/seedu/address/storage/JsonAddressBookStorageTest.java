@@ -13,14 +13,18 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import seedu.address.commons.exceptions.DataLoadingException;
+import seedu.address.commons.util.JsonUtil;
 import seedu.address.model.AddressBook;
 import seedu.address.model.ReadOnlyAddressBook;
+import seedu.address.model.attendance.AttendanceRecord;
+import seedu.address.model.label.Label;
 import seedu.address.model.person.Person;
 import seedu.address.testutil.PersonBuilder;
 
@@ -82,6 +86,36 @@ public class JsonAddressBookStorageTest {
                 throw new IOException("Simulated replacement failure");
             }
         };
+    }
+
+    @Test
+    public void readAndSaveAddressBook_paddedFields_savesTrimmedValues() throws Exception {
+        // EP: Manually padded JSON fields represent valid data that should load and save as trimmed model values.
+        Path file = testFolder.resolve("padded.json");
+        String originalContents = """
+                {"persons":[{
+                  "name":"  Alice   Pauline  ",
+                  "studentId":" a1234567b ",
+                  "email":" Alice@EXAMPLE.COM ",
+                  "remark":"  Follow up  soon\\nNext week  ",
+                  "labels":[" Tutorial  1 "],
+                  "attendance":[{"date":" 2026-10-20 ","group":" Tutorial  1 "}]
+                }]}
+                """;
+        Files.writeString(file, originalContents);
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(file);
+        ReadOnlyAddressBook restored = storage.readAddressBook().orElseThrow();
+        AddressBook expected = new AddressBook();
+        expected.addPerson(new PersonBuilder(ALICE).withName("Alice Pauline").withStudentId("A1234567B")
+                .withEmail("Alice@example.com").withRemark("Follow up  soon\nNext week").withLabels("Tutorial  1")
+                .withAttendance(new AttendanceRecord(LocalDate.parse("2026-10-20"), new Label("Tutorial  1")))
+                .build());
+
+        assertEquals(expected, restored);
+        assertEquals(originalContents, Files.readString(file));
+        storage.saveAddressBook(restored);
+        assertEquals(JsonUtil.toJsonString(new JsonSerializableAddressBook(expected)), Files.readString(file));
+        assertEquals(expected, storage.readAddressBook().orElseThrow());
     }
 
     @Test

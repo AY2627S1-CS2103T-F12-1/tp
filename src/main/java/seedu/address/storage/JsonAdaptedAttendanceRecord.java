@@ -40,22 +40,31 @@ class JsonAdaptedAttendanceRecord {
 
     /**
      * Converts this adapted record into its validated model form.
+     * Trims surrounding whitespace from the date and group before validation.
      *
      * @throws IllegalValueException if the date or group is invalid.
      */
     public AttendanceRecord toModelType() throws IllegalValueException {
-        if (date == null || !date.matches("[0-9]{4}-[0-9]{2}-[0-9]{2}")) {
+        if (date == null) {
+            throw new IllegalValueException(MESSAGE_INVALID_DATE);
+        }
+        final String trimmedDate = date.trim();
+        if (!trimmedDate.matches("[0-9]{4}-[0-9]{2}-[0-9]{2}")) {
             throw new IllegalValueException(MESSAGE_INVALID_DATE);
         }
         LocalDate modelDate;
         try {
-            modelDate = LocalDate.parse(date);
+            modelDate = LocalDate.parse(trimmedDate);
         } catch (DateTimeParseException e) {
             throw new IllegalValueException(MESSAGE_INVALID_DATE);
         }
-        if (group == null || !Label.isValidLabelName(group)) {
+        if (group == null) {
             throw new IllegalValueException(Label.MESSAGE_CONSTRAINTS);
         }
-        return new AttendanceRecord(modelDate, new Label(group));
+        final String trimmedGroup = group.trim();
+        if (!Label.isValidLabelName(trimmedGroup)) {
+            throw new IllegalValueException(Label.MESSAGE_CONSTRAINTS);
+        }
+        return new AttendanceRecord(modelDate, new Label(trimmedGroup));
     }
 }
