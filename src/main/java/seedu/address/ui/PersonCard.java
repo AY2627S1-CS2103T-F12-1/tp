@@ -55,7 +55,13 @@ public class PersonCard extends UiPart<Region> {
         remark.setManaged(remark.isVisible());
         person.getLabels().stream()
                 .sorted(Comparator.comparing(label -> label.labelName))
-                .forEach(label -> labels.getChildren().add(new Label(label.labelName)));
-        studentIds.getChildren().add(new Label("Student ID: " + person.getStudentId()));
+                .forEach(label -> {
+                    Label groupBadge = new Label(label.labelName);
+                    groupBadge.getStyleClass().add("group_label_badge");
+                    labels.getChildren().add(groupBadge);
+                });
+        Label studentIdBadge = new Label("Student ID: " + person.getStudentId());
+        studentIdBadge.getStyleClass().add("student_id_badge");
+        studentIds.getChildren().add(studentIdBadge);
     }
 }
