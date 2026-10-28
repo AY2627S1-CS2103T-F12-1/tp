@@ -46,6 +46,8 @@ If a previously used monitor is disconnected, the saved window position is adjus
 You can resize the window down to 450 × 400 logical pixels. At higher scaling, fewer student cards fit at once;
 scroll the student list to reach the remaining students.
 
+**Disclaimer:** Do not run multiple instances of TeachAssist. Running multiple instances of TeachAssist will lead to each instance overriding the same savefile which can lead to unintended behaviour.
+
 --------------------------------------------------------------------------------------------------------------------
 
 ## Features
@@ -91,7 +93,7 @@ Format: `add n/NAME i/STUDENT_ID e/EMAIL [r/REMARK] [l/LABEL_NAME]`
 * `n/`, `i/`, and `e/` are compulsory and cannot be empty. Each can appear only once.
 * Parameters can appear in any order, including `r/` and `l/`. Prefixes are lowercase and case-sensitive.
 * Enter one command line. Leading and trailing whitespace around the command and each value is ignored.
-* A supported prefix at the start of a whitespace-separated token starts a parameter. Spaces or tabs can separate parameters.
+* A supported prefix at the start of a whitespace-separated token starts a parameter. Spaces can separate parameters.
 * Unknown alphabetic prefix tokens, such as `x/` or `p/`, are rejected, including inside remarks.
 * A prefix joined to other text does not start a parameter. For example, `https://example.com/n/Alex` remains remark text.
 
@@ -331,7 +333,7 @@ Format: `delete i/STUDENT_ID`
 * Matching is case-insensitive: `delete i/a0123456b` and `delete i/A0123456B` identify the same student.
 * The student is located in the complete record list, even when hidden by a `find` filter.
 * The current filter is preserved after deletion. If the student was hidden, the visible list can stay unchanged.
-* Leading/trailing whitespace is ignored, and a tab can separate `delete` from `i/`. Prefixes remain lowercase.
+* Leading/trailing whitespace is ignored, and a space can separate `delete` from `i/`. Prefixes remain lowercase.
 * The command must occupy one line. Numeric index commands such as `delete 1` are no longer accepted.
 * Deletion becomes visible only after saving succeeds. A save failure retains the entire record and previous data file.
 
