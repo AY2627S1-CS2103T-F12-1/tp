@@ -42,9 +42,10 @@ public class JsonAdaptedPersonTest {
 
     @Test
     public void toModelType_paddedFields_returnsTrimmedPerson() throws Exception {
-        // EP: ASCII, Unicode, and control whitespace padding should load with surrounding whitespace removed.
+        // EP: ASCII, Unicode, control whitespace, and Hangul filler padding should be removed when loading.
         // EP: Internal spacing and line breaks remain valid and should be preserved by trimming.
-        for (String padding : new String[] {" ", "\t\r\n", "\u00a0", "\u2009", "\u202f", "\u3000"}) {
+        for (String padding : new String[] {" ", "\t\r\n", "\u00a0", "\u2009", "\u202f", "\u3000",
+            "\u115f", "\u1160", "\u3164", "\uffa0"}) {
             JsonAdaptedPerson person = new JsonAdaptedPerson(padding + VALID_NAME + padding,
                     padding + "a1234567b" + padding, padding + "Quiz+Sam@EXAMPLE.COM" + padding,
                     List.of(new JsonAdaptedLabel(padding + "Tutorial  1" + padding)),
@@ -141,6 +142,19 @@ public class JsonAdaptedPersonTest {
                         List.of(), "").toModelType());
         assertThrows(IllegalValueException.class, JsonAdaptedAttendanceRecord.MESSAGE_INVALID_DATE, () ->
                 new JsonAdaptedAttendanceRecord("2026-10-\u300020", "Tutorial 1").toModelType());
+    }
+
+    @Test
+    public void toModelType_hangulFillerLabels_detectsDuplicatesAndBlankValues() {
+        // EP: Filler-only labels are blank; filler-separated labels match labels containing ordinary spaces.
+        for (String filler : new String[] {"\u115f", "\u1160", "\u3164", "\uffa0"}) {
+            // BVA: A filler-only label has zero meaningful characters after normalisation and trimming.
+            assertThrows(IllegalValueException.class, Label.MESSAGE_CONSTRAINTS, () ->
+                    new JsonAdaptedLabel(filler).toModelType());
+            JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_STUDENT_ID, VALID_EMAIL,
+                    List.of(new JsonAdaptedLabel("Tutorial 1"), new JsonAdaptedLabel("Tutorial" + filler + "1")), "");
+            assertThrows(IllegalValueException.class, MESSAGE_DUPLICATE_LABEL, person::toModelType);
+        }
     }
 
     @Test

@@ -41,8 +41,9 @@ public class AddressBookParserTest {
 
     @Test
     public void parseCommand_unicodeSpaces_matchesAsciiCommand() throws Exception {
-        // EP: Unicode spaces separate the command, prefixes, and search keywords just like ASCII spaces.
-        for (String space : List.of("\u00a0", "\u2007", "\u2009", "\u202f", "\u3000")) {
+        // EP: Unicode spaces and Hangul fillers separate the command, prefixes, and search keywords.
+        for (String space : List.of("\u00a0", "\u2007", "\u2009", "\u202f", "\u3000",
+                "\u115f", "\u1160", "\u3164", "\uffa0")) {
             assertEquals(parser.parseCommand("add n/Alice Pauline i/A1234567B e/alice@example.com l/Tutorial 1"),
                     parser.parseCommand(space + "add" + space + "n/Alice" + space + "Pauline" + space
                             + "i/A1234567B" + space + "e/alice@example.com" + space + "l/Tutorial" + space + "1"));

@@ -32,8 +32,9 @@ public class ParserUtilTest {
 
     @Test
     public void parse_unicodeSpaces_normalisesBeforeValidation() throws Exception {
-        // EP: Unicode padding is trimmed; internal Unicode spaces follow each field's ordinary space rules.
-        for (String space : new String[] {"\u00a0", "\u2007", "\u2009", "\u202f", "\u3000"}) {
+        // EP: Unicode spaces and Hangul fillers follow each field's ordinary space rules, including trimming.
+        for (String space : new String[] {"\u00a0", "\u2007", "\u2009", "\u202f", "\u3000",
+            "\u115f", "\u1160", "\u3164", "\uffa0"}) {
             assertEquals(new Name("Rachel Walker"), ParserUtil.parseName(space + "Rachel" + space + "Walker" + space));
             assertEquals(new StudentId(VALID_STUDENT_ID), ParserUtil.parseStudentId(space + VALID_STUDENT_ID + space));
             assertEquals(new Email(VALID_EMAIL), ParserUtil.parseEmail(space + VALID_EMAIL + space));

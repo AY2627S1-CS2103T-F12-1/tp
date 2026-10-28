@@ -21,6 +21,17 @@ public class StringUtilTest {
     }
 
     @Test
+    public void normaliseSpaces_hangulFillers_returnsAsciiSpaces() {
+        // EP: Hangul leading, vowel, compatibility, and halfwidth fillers are treated as blank spaces.
+        for (String filler : new String[] {"\u115f", "\u1160", "\u3164", "\uffa0"}) {
+            // BVA: One filler maps to exactly one space; repeated fillers retain their count.
+            assertEquals(" ", StringUtil.normaliseSpaces(filler));
+            assertEquals("A  B", StringUtil.normaliseSpaces("A" + filler + filler + "B"));
+            assertEquals(" \uac00 ", StringUtil.normaliseSpaces(filler + "\uac00" + filler));
+        }
+    }
+
+    @Test
     public void normaliseSpaces_otherCharacters_preservesText() {
         // EP: Control whitespace, Unicode line separators, zero-width spaces, BOMs, and other text are preserved.
         String text = "Hello\tworld\r\n\u2028\u2029\u200b\ufeff\ud83d\ude00";

@@ -20,8 +20,9 @@ public class ArgumentTokenizerTest {
 
     @Test
     public void tokenize_unicodeSpaces_recognisesPrefixesAndNormalisesValues() {
-        // EP: Non-breaking and other Unicode spaces separate prefixes, pad values, and occur inside values.
-        for (String space : List.of("\u00a0", "\u2007", "\u2009", "\u202f", "\u3000")) {
+        // EP: Unicode spaces and Hangul fillers separate prefixes, pad values, and occur inside values.
+        for (String space : List.of("\u00a0", "\u2007", "\u2009", "\u202f", "\u3000",
+                "\u115f", "\u1160", "\u3164", "\uffa0")) {
             ArgumentMultimap arguments = ArgumentTokenizer.tokenize(space + "p/first" + space + "value"
                     + space + "-t" + space + "second" + space, pSlash, dashT);
             assertEquals("", arguments.getPreamble());

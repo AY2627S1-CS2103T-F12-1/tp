@@ -14,15 +14,16 @@ import java.util.Locale;
 public class StringUtil {
 
     /**
-     * Converts Unicode space separators to ASCII spaces, preserving their number and position.
+     * Converts Unicode space separators and Hangul fillers to ASCII spaces, preserving their number and position.
+     * Hangul fillers U+115F, U+1160, U+3164, and U+FFA0 are treated as blank characters.
      * Tabs, line breaks, zero-width spaces, and byte order marks are preserved.
      *
      * @param text The non-null text to normalise.
-     * @return Text with every Unicode space separator replaced by an ASCII space.
+     * @return Text with every Unicode space separator and supported filler replaced by an ASCII space.
      */
     public static String normaliseSpaces(String text) {
         requireNonNull(text);
-        return text.replaceAll("\\p{Zs}", " ");
+        return text.replaceAll("[\\p{Zs}\\u115F\\u1160\\u3164\\uFFA0]", " ");
     }
 
     /**
