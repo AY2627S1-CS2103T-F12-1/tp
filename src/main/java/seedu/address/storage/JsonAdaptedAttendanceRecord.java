@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import seedu.address.commons.exceptions.IllegalValueException;
+import seedu.address.commons.util.StringUtil;
 import seedu.address.model.attendance.AttendanceRecord;
 import seedu.address.model.label.Label;
 
@@ -40,7 +41,7 @@ class JsonAdaptedAttendanceRecord {
 
     /**
      * Converts this adapted record into its validated model form.
-     * Trims surrounding whitespace from the date and group before validation.
+     * Normalises Unicode space separators and trims surrounding whitespace from the date and group before validation.
      *
      * @throws IllegalValueException if the date or group is invalid.
      */
@@ -48,7 +49,7 @@ class JsonAdaptedAttendanceRecord {
         if (date == null) {
             throw new IllegalValueException(MESSAGE_INVALID_DATE);
         }
-        final String trimmedDate = date.trim();
+        final String trimmedDate = StringUtil.normaliseSpaces(date).trim();
         if (!trimmedDate.matches("[0-9]{4}-[0-9]{2}-[0-9]{2}")) {
             throw new IllegalValueException(MESSAGE_INVALID_DATE);
         }
@@ -61,7 +62,7 @@ class JsonAdaptedAttendanceRecord {
         if (group == null) {
             throw new IllegalValueException(Label.MESSAGE_CONSTRAINTS);
         }
-        final String trimmedGroup = group.trim();
+        final String trimmedGroup = StringUtil.normaliseSpaces(group).trim();
         if (!Label.isValidLabelName(trimmedGroup)) {
             throw new IllegalValueException(Label.MESSAGE_CONSTRAINTS);
         }

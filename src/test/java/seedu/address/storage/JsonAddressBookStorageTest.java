@@ -90,16 +90,16 @@ public class JsonAddressBookStorageTest {
 
     @Test
     public void readAndSaveAddressBook_paddedFields_savesTrimmedValues() throws Exception {
-        // EP: Manually padded JSON fields represent valid data that should load and save as trimmed model values.
+        // EP: Unicode spaces in manually edited fields load and save as ordinary spaces with padding removed.
         Path file = testFolder.resolve("padded.json");
         String originalContents = """
                 {"persons":[{
-                  "name":"  Alice   Pauline  ",
-                  "studentId":" a1234567b ",
-                  "email":" Alice@EXAMPLE.COM ",
-                  "remark":"  Follow up  soon\\nNext week  ",
-                  "labels":[" Tutorial  1 "],
-                  "attendance":[{"date":" 2026-10-20 ","group":" Tutorial  1 "}]
+                  "name":"\u00a0Alice\u2009\u2009Pauline\u3000",
+                  "studentId":"\u202fa1234567b\u00a0",
+                  "email":"\u2009Alice@EXAMPLE.COM\u3000",
+                  "remark":"\u00a0Follow\u2009up\u202f\u202fsoon\\nNext week\u3000",
+                  "labels":["\u3000Tutorial\u00a0\u00a01\u202f"],
+                  "attendance":[{"date":"\u00a02026-10-20\u3000","group":"\u202fTutorial\u2009\u20091\u00a0"}]
                 }]}
                 """;
         Files.writeString(file, originalContents);

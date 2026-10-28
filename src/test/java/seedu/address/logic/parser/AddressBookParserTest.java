@@ -40,6 +40,24 @@ public class AddressBookParserTest {
     private final AddressBookParser parser = new AddressBookParser();
 
     @Test
+    public void parseCommand_unicodeSpaces_matchesAsciiCommand() throws Exception {
+        // EP: Unicode spaces separate the command, prefixes, and search keywords just like ASCII spaces.
+        for (String space : List.of("\u00a0", "\u2007", "\u2009", "\u202f", "\u3000")) {
+            assertEquals(parser.parseCommand("add n/Alice Pauline i/A1234567B e/alice@example.com l/Tutorial 1"),
+                    parser.parseCommand(space + "add" + space + "n/Alice" + space + "Pauline" + space
+                            + "i/A1234567B" + space + "e/alice@example.com" + space + "l/Tutorial" + space + "1"));
+            assertEquals(parser.parseCommand("find n/Alice Pauline"),
+                    parser.parseCommand("find" + space + "n/Alice" + space + "Pauline"));
+            assertThrows(ParseException.class, "Unknown parameter: x/.", () ->
+                    parser.parseCommand("add n/Alice i/A1234567B e/alice@example.com" + space + "x/unknown"));
+            // BVA: Unicode-space-only arguments have zero meaningful characters for commands accepting no arguments.
+            assertTrue(parser.parseCommand("list" + space) instanceof ListCommand);
+            assertTrue(new UndoCommandParser().parse(space) instanceof UndoCommand);
+            assertTrue(new ListCommandParser().parse(space) instanceof ListCommand);
+        }
+    }
+
+    @Test
     public void parseCommand_unmark_returnsUnmarkCommand() throws Exception {
         UnmarkCommand expected = new UnmarkCommand(new StudentId("A0123456B"),
                 LocalDate.parse("2026-10-20"), new Label("Tutorial 1"));

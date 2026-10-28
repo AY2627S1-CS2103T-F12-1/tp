@@ -14,6 +14,7 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import seedu.address.commons.util.StringUtil;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.EmailContainsKeywordsPredicate;
@@ -44,7 +45,7 @@ public class FindCommandParser implements Parser<FindCommand> {
      * @throws ParseException if the user input does not conform to the expected format
      */
     public FindCommand parse(String args) throws ParseException {
-        String trimmedArgs = args.trim();
+        String trimmedArgs = StringUtil.normaliseSpaces(args).trim();
         ArgumentMultimap argMultimap =
                 ArgumentTokenizer.tokenize(trimmedArgs, PREFIX_NAME, PREFIX_STUDENT_ID,
                         PREFIX_EMAIL, PREFIX_REMARK, PREFIX_LABEL);

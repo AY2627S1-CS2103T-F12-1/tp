@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import seedu.address.commons.exceptions.IllegalValueException;
+import seedu.address.commons.util.StringUtil;
 import seedu.address.model.attendance.AttendanceRecord;
 import seedu.address.model.label.Label;
 import seedu.address.model.person.Email;
@@ -92,7 +93,7 @@ class JsonAdaptedPerson {
 
     /**
      * Converts this Jackson-friendly adapted person object into the model's {@code Person} object.
-     * Trims surrounding whitespace from text fields before validation.
+     * Normalises Unicode space separators and trims surrounding whitespace from text fields before validation.
      *
      * @throws IllegalValueException if there were any data constraints violated in the adapted person.
      */
@@ -113,7 +114,7 @@ class JsonAdaptedPerson {
         if (name == null) {
             throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT, Name.class.getSimpleName()));
         }
-        final String trimmedName = name.trim();
+        final String trimmedName = StringUtil.normaliseSpaces(name).trim();
         if (!Name.isValidName(trimmedName)) {
             throw new IllegalValueException(Name.MESSAGE_CONSTRAINTS);
         }
@@ -123,7 +124,7 @@ class JsonAdaptedPerson {
             throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT,
                     StudentId.class.getSimpleName()));
         }
-        final String trimmedStudentId = studentId.trim();
+        final String trimmedStudentId = StringUtil.normaliseSpaces(studentId).trim();
         if (!StudentId.isValidStudentId(trimmedStudentId)) {
             throw new IllegalValueException(StudentId.MESSAGE_CONSTRAINTS);
         }
@@ -132,14 +133,14 @@ class JsonAdaptedPerson {
         if (email == null) {
             throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT, Email.class.getSimpleName()));
         }
-        final String trimmedEmail = email.trim();
+        final String trimmedEmail = StringUtil.normaliseSpaces(email).trim();
         if (!Email.isValidEmail(trimmedEmail)) {
             throw new IllegalValueException(Email.MESSAGE_CONSTRAINTS);
         }
         final Email modelEmail = new Email(trimmedEmail);
 
         final Set<Label> modelLabels = new HashSet<>(personLabels);
-        final String trimmedRemark = remark.trim();
+        final String trimmedRemark = StringUtil.normaliseSpaces(remark).trim();
         if (!Remark.isValidRemark(trimmedRemark)) {
             throw new IllegalValueException(Remark.MESSAGE_CONSTRAINTS);
         }

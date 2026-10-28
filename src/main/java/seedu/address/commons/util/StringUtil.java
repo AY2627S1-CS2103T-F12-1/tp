@@ -14,6 +14,18 @@ import java.util.Locale;
 public class StringUtil {
 
     /**
+     * Converts Unicode space separators to ASCII spaces, preserving their number and position.
+     * Tabs, line breaks, zero-width spaces, and byte order marks are preserved.
+     *
+     * @param text The non-null text to normalise.
+     * @return Text with every Unicode space separator replaced by an ASCII space.
+     */
+    public static String normaliseSpaces(String text) {
+        requireNonNull(text);
+        return text.replaceAll("\\p{Zs}", " ");
+    }
+
+    /**
      * Returns true if the {@code sentence} contains the {@code word}.
      *   Ignores case, but a full word match is required.
      *   <br>examples:<pre>
@@ -28,11 +40,11 @@ public class StringUtil {
         requireNonNull(sentence);
         requireNonNull(word);
 
-        String preppedWord = word.trim();
+        String preppedWord = normaliseSpaces(word).trim();
         checkArgument(!preppedWord.isEmpty(), "Word parameter cannot be empty");
         checkArgument(preppedWord.split("\\s+").length == 1, "Word parameter should be a single word");
 
-        String preppedSentence = sentence;
+        String preppedSentence = normaliseSpaces(sentence);
         String[] wordsInPreppedSentence = preppedSentence.split("\\s+");
 
         return Arrays.stream(wordsInPreppedSentence)
@@ -54,10 +66,10 @@ public class StringUtil {
         requireNonNull(sentence);
         requireNonNull(word);
 
-        String preppedWord = word.trim();
+        String preppedWord = normaliseSpaces(word).trim();
         checkArgument(!preppedWord.isEmpty(), "Word parameter cannot be empty");
 
-        return sentence.toLowerCase(Locale.ROOT).contains(preppedWord.toLowerCase(Locale.ROOT));
+        return normaliseSpaces(sentence).toLowerCase(Locale.ROOT).contains(preppedWord.toLowerCase(Locale.ROOT));
     }
 
     /**

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 import seedu.address.commons.exceptions.IllegalValueException;
+import seedu.address.commons.util.StringUtil;
 import seedu.address.model.label.Label;
 
 /**
@@ -35,7 +36,7 @@ class JsonAdaptedLabel {
 
     /**
      * Converts this Jackson-friendly adapted label object into the model's {@code Label} object.
-     * Trims surrounding whitespace before validation.
+     * Normalises Unicode space separators and trims surrounding whitespace before validation.
      *
      * @throws IllegalValueException if there were any data constraints violated in the adapted label.
      */
@@ -43,7 +44,7 @@ class JsonAdaptedLabel {
         if (labelName == null) {
             throw new IllegalValueException(Label.MESSAGE_CONSTRAINTS);
         }
-        final String trimmedLabelName = labelName.trim();
+        final String trimmedLabelName = StringUtil.normaliseSpaces(labelName).trim();
         if (!Label.isValidLabelName(trimmedLabelName)) {
             throw new IllegalValueException(Label.MESSAGE_CONSTRAINTS);
         }

@@ -5,6 +5,7 @@ import static seedu.address.logic.parser.CliSyntax.PREFIX_STUDENT_ID;
 import java.util.Optional;
 import java.util.Set;
 
+import seedu.address.commons.util.StringUtil;
 import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.StudentId;
@@ -27,7 +28,7 @@ public class DeleteCommandParser implements Parser<DeleteCommand> {
      * @throws NullPointerException if {@code args} is null.
      */
     public DeleteCommand parse(String args) throws ParseException {
-        String trimmedArgs = args.trim();
+        String trimmedArgs = StringUtil.normaliseSpaces(args).trim();
         ArgumentMultimap arguments = ArgumentTokenizer.tokenize(trimmedArgs, PREFIX_STUDENT_ID);
         validateStructure(trimmedArgs, arguments);
         StudentId studentId = ParserUtil.parseStudentId(arguments.getValue(PREFIX_STUDENT_ID).orElseThrow());

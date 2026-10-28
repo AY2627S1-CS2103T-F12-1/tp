@@ -9,6 +9,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import seedu.address.commons.util.StringUtil;
+
 /**
  * Tokenizes arguments string of the form: {@code preamble <prefix>value <prefix>value ...}<br>
  *     e.g. {@code some preamble text t/ 11.00 t/12.00 k/ m/ July}  where prefixes are {@code t/ k/ m/}.<br>
@@ -16,6 +18,7 @@ import java.util.stream.Collectors;
  * 2. Leading and trailing whitespaces of an argument value will be discarded.<br>
  * 3. An argument may be repeated and all its values will be accumulated e.g. the value of {@code t/}
  *    in the above example.<br>
+ * 4. Unicode space separators are treated as ASCII spaces in prefixes and values.<br>
  */
 public class ArgumentTokenizer {
 
@@ -31,7 +34,7 @@ public class ArgumentTokenizer {
      * @return The first unknown prefix in input order, or empty if all prefix tokens are supported.
      */
     public static Optional<Prefix> findUnknownPrefix(String argsString, Collection<Prefix> supportedPrefixes) {
-        Matcher matcher = PARAMETER_PREFIX.matcher(argsString);
+        Matcher matcher = PARAMETER_PREFIX.matcher(StringUtil.normaliseSpaces(argsString));
         while (matcher.find()) {
             Prefix prefix = new Prefix(matcher.group(1));
             if (!supportedPrefixes.contains(prefix)) {
@@ -51,8 +54,9 @@ public class ArgumentTokenizer {
      * @return           ArgumentMultimap object that maps prefixes to their arguments
      */
     public static ArgumentMultimap tokenize(String argsString, Prefix... prefixes) {
-        List<PrefixPosition> positions = findAllPrefixPositions(argsString, prefixes);
-        return extractArguments(argsString, positions);
+        String normalisedArgs = StringUtil.normaliseSpaces(argsString);
+        List<PrefixPosition> positions = findAllPrefixPositions(normalisedArgs, prefixes);
+        return extractArguments(normalisedArgs, positions);
     }
 
     /**

@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import seedu.address.commons.util.StringUtil;
 import seedu.address.logic.commands.MarkCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.label.Label;
@@ -35,7 +36,7 @@ public class MarkCommandParser implements Parser<MarkCommand> {
      */
     @Override
     public MarkCommand parse(String args) throws ParseException {
-        String trimmedArgs = args.trim();
+        String trimmedArgs = StringUtil.normaliseSpaces(args).trim();
         ArgumentMultimap arguments = ArgumentTokenizer.tokenize(trimmedArgs,
                 PREFIX_STUDENT_ID, PREFIX_DATE, PREFIX_LABEL);
         validateStructure(trimmedArgs, arguments);

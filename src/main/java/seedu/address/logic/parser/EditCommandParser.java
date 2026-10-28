@@ -18,6 +18,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import seedu.address.commons.util.StringUtil;
 import seedu.address.logic.commands.EditCommand;
 import seedu.address.logic.commands.EditCommand.EditPersonDescriptor;
 import seedu.address.logic.parser.exceptions.ParseException;
@@ -48,7 +49,7 @@ public class EditCommandParser implements Parser<EditCommand> {
      */
     public EditCommand parse(String args) throws ParseException {
         requireNonNull(args);
-        String trimmedArgs = args.trim();
+        String trimmedArgs = StringUtil.normaliseSpaces(args).trim();
         ArgumentMultimap arguments = ArgumentTokenizer.tokenize(trimmedArgs,
                 PREFIX_STUDENT_ID, PREFIX_NAME, PREFIX_EMAIL, PREFIX_REMARK, PREFIX_LABEL, PREFIX_DELETE_LABEL);
         validateStructure(trimmedArgs, arguments);
