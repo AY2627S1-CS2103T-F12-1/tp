@@ -1,6 +1,7 @@
 package seedu.address.logic.parser;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static seedu.address.logic.parser.ParserUtil.MESSAGE_INVALID_DATE;
 import static seedu.address.logic.parser.ParserUtil.MESSAGE_INVALID_INDEX;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
@@ -297,6 +298,41 @@ public class ParserUtilTest {
         String labelWithWhitespace = WHITESPACE + VALID_LABEL + WHITESPACE;
         Label expectedLabel = new Label(VALID_LABEL);
         assertEquals(expectedLabel, ParserUtil.parseLabel(labelWithWhitespace));
+    }
+
+    @Test
+    public void parseDate_null_throwsNullPointerException() {
+        // EP: null input
+        assertThrows(NullPointerException.class, () -> ParserUtil.parseDate(null));
+    }
+
+    @Test
+    public void parseDate_invalidFormat_throwsParseException() {
+        // EP: invalid format regex
+        assertThrows(ParseException.class, MESSAGE_INVALID_DATE, () -> ParserUtil.parseDate("2024/05/10"));
+        assertThrows(ParseException.class, MESSAGE_INVALID_DATE, () -> ParserUtil.parseDate("2024-5-1"));
+        assertThrows(ParseException.class, MESSAGE_INVALID_DATE, () -> ParserUtil.parseDate("not-a-date"));
+    }
+
+    @Test
+    public void parseDate_invalidDate_throwsParseException() {
+        // EP: nonexistent calendar date matching regex
+        // BVA: day exceeds February limit
+        assertThrows(ParseException.class, MESSAGE_INVALID_DATE, () -> ParserUtil.parseDate("2024-02-30"));
+        // BVA: month exceeds 12-month limit
+        assertThrows(ParseException.class, MESSAGE_INVALID_DATE, () -> ParserUtil.parseDate("2024-13-01"));
+    }
+
+    @Test
+    public void parseDate_validDateWithoutWhitespace_returnsDate() throws Exception {
+        // EP: valid date without whitespace
+        assertEquals(LocalDate.parse("2024-05-10"), ParserUtil.parseDate("2024-05-10"));
+    }
+
+    @Test
+    public void parseDate_validDateWithWhitespace_returnsDate() throws Exception {
+        // EP: valid date with whitespace
+        assertEquals(LocalDate.parse("2024-05-10"), ParserUtil.parseDate(WHITESPACE + "2024-05-10" + WHITESPACE));
     }
 
 }

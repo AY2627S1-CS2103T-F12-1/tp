@@ -15,8 +15,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import seedu.address.commons.util.StringUtil;
 import seedu.address.logic.commands.EditCommand;
@@ -26,14 +24,13 @@ import seedu.address.model.label.Label;
 import seedu.address.model.person.StudentId;
 
 /**
- * Parses input arguments and creates a new EditCommand object
+ * Parses input arguments and creates a new EditCommand object.
  */
 public class EditCommandParser implements Parser<EditCommand> {
 
     private static final List<Prefix> SUPPORTED_PREFIXES =
             List.of(PREFIX_STUDENT_ID, PREFIX_NAME, PREFIX_EMAIL, PREFIX_REMARK,
                     PREFIX_LABEL, PREFIX_DELETE_LABEL);
-    private static final Pattern PARAMETER_PREFIX = Pattern.compile("(?:^|\\p{javaWhitespace})([A-Za-z]+/)");
     private static final String MESSAGE_UNKNOWN_PARAMETER = "Unknown parameter: %s.";
     private static final String MESSAGE_MISSING_STUDENT_ID = "Missing required parameter: i/.";
     private static final String MESSAGE_EMPTY_STUDENT_ID = "Parameter i/ cannot be empty.";
@@ -132,14 +129,10 @@ public class EditCommandParser implements Parser<EditCommand> {
     }
 
     private static void rejectUnknownPrefixes(String args) throws ParseException {
-        Matcher matcher = PARAMETER_PREFIX.matcher(args);
-        while (matcher.find()) {
-            Prefix prefix = new Prefix(matcher.group(1));
-            if (!SUPPORTED_PREFIXES.contains(prefix)) {
-                throw new ParseException(String.format(MESSAGE_UNKNOWN_PARAMETER, prefix));
-            }
+        Optional<Prefix> unknownPrefix = ArgumentTokenizer.findUnknownPrefix(args, SUPPORTED_PREFIXES);
+        if (unknownPrefix.isPresent()) {
+            throw new ParseException(String.format(MESSAGE_UNKNOWN_PARAMETER, unknownPrefix.get()));
         }
     }
 
 }
-

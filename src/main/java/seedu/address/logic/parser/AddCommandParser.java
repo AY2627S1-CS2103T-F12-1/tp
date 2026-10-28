@@ -1,5 +1,6 @@
 package seedu.address.logic.parser;
 
+import static java.util.Objects.requireNonNull;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_EMAIL;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_LABEL;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
@@ -45,6 +46,7 @@ public class AddCommandParser implements Parser<AddCommand> {
      * @throws NullPointerException if {@code args} is null.
      */
     public AddCommand parse(String args) throws ParseException {
+        requireNonNull(args);
         String trimmedArgs = StringUtil.normaliseSpaces(args).trim();
         ArgumentMultimap argMultimap =
                 ArgumentTokenizer.tokenize(trimmedArgs, PREFIX_NAME, PREFIX_STUDENT_ID, PREFIX_EMAIL,
@@ -71,7 +73,8 @@ public class AddCommandParser implements Parser<AddCommand> {
             throw new ParseException(AddCommand.MESSAGE_INVALID_FORMAT);
         }
         rejectRepeatedPrefixes(arguments);
-        requireMandatoryValues(arguments);
+        requirePresentMandatoryPrefixes(arguments);
+        requireNonEmptyMandatoryValues(arguments);
         requireOptionalLabelValue(arguments);
     }
 
@@ -90,14 +93,17 @@ public class AddCommandParser implements Parser<AddCommand> {
         }
     }
 
-    private static void requireMandatoryValues(ArgumentMultimap arguments) throws ParseException {
+    private static void requirePresentMandatoryPrefixes(ArgumentMultimap arguments) throws ParseException {
         for (Prefix prefix : REQUIRED_PREFIXES) {
             if (arguments.getValue(prefix).isEmpty()) {
                 throw new ParseException(String.format(MESSAGE_MISSING_PARAMETER, prefix));
             }
         }
+    }
+
+    private static void requireNonEmptyMandatoryValues(ArgumentMultimap arguments) throws ParseException {
         for (Prefix prefix : REQUIRED_PREFIXES) {
-            if (arguments.getValue(prefix).orElseThrow().isEmpty()) {
+            if (arguments.getValue(prefix).get().isEmpty()) {
                 throw new ParseException(String.format(MESSAGE_EMPTY_PARAMETER, prefix));
             }
         }

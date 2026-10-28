@@ -13,12 +13,13 @@ public class NameContainsKeywordsPredicate implements Predicate<Person> {
     private final List<String> keywords;
 
     /**
-     * Constructs a {@code NameContainsKeywordsPredicate} with the given keywords.
+     * Constructs a {@code NameContainsKeywordsPredicate} with an immutable snapshot of the given keywords.
      *
      * @param keywords Keywords to match against a person's name.
+     * @throws NullPointerException if the list or any keyword is null.
      */
     public NameContainsKeywordsPredicate(List<String> keywords) {
-        this.keywords = keywords;
+        this.keywords = List.copyOf(keywords);
     }
 
     @Override

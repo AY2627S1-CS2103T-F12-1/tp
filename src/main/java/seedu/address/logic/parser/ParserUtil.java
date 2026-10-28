@@ -22,6 +22,7 @@ public class ParserUtil {
 
     public static final String MESSAGE_INVALID_INDEX = "Index must be a positive integer.";
     public static final String MESSAGE_INVALID_DATE = "Date must use a valid YYYY-MM-DD date.";
+    public static final String DATE_FORMAT_REGEX = "[0-9]{4}-[0-9]{2}-[0-9]{2}";
 
     /**
      * Parses {@code oneBasedIndex} into an {@code Index} and returns it. Leading and trailing whitespaces will be
@@ -100,6 +101,9 @@ public class ParserUtil {
      * Parses a {@code String label} into a {@code Label}.
      * Leading and trailing whitespaces will be trimmed.
      *
+     * @param label The non-null label text.
+     * @return The parsed label with surrounding whitespace removed.
+     * @throws NullPointerException if {@code label} is null.
      * @throws ParseException if the given {@code label} is invalid.
      */
     public static Label parseLabel(String label) throws ParseException {
@@ -135,12 +139,13 @@ public class ParserUtil {
      *
      * @param date The non-null date text.
      * @return The parsed date.
+     * @throws NullPointerException if {@code date} is null.
      * @throws ParseException if the date is malformed or does not exist.
      */
     public static LocalDate parseDate(String date) throws ParseException {
         requireNonNull(date);
         String trimmedDate = StringUtil.normaliseSpaces(date).trim();
-        if (!trimmedDate.matches("[0-9]{4}-[0-9]{2}-[0-9]{2}")) {
+        if (!trimmedDate.matches(DATE_FORMAT_REGEX)) {
             throw new ParseException(MESSAGE_INVALID_DATE);
         }
         try {

@@ -32,6 +32,14 @@ public class AddCommandTest {
     }
 
     @Test
+    public void execute_nullModel_throwsNullPointerException() {
+        // EP: null model
+        Person validPerson = new PersonBuilder().build();
+        AddCommand addCommand = new AddCommand(validPerson);
+        assertThrows(NullPointerException.class, () -> addCommand.execute(null));
+    }
+
+    @Test
     public void execute_personAcceptedByModel_addSuccessful() throws Exception {
         // EP: person accepted by model
         // BVA: add to an empty student list
@@ -149,7 +157,7 @@ public class AddCommandTest {
         }
 
         @Override
-        public void updateFilteredPersonList(Predicate<Person> predicate) {
+        public void updateFilteredPersonList(Predicate<? super Person> predicate) {
             throw new AssertionError("This method should not be called.");
         }
     }

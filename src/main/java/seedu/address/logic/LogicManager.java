@@ -1,5 +1,8 @@
 package seedu.address.logic;
 
+import static java.util.Objects.requireNonNull;
+import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
+
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -10,6 +13,8 @@ import seedu.address.commons.core.GuiSettings;
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.commands.Command;
 import seedu.address.logic.commands.CommandResult;
+import seedu.address.logic.commands.FindCommand;
+import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.UndoCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.AddressBookParser;
@@ -51,6 +56,7 @@ public class LogicManager implements Logic {
      *
      * @param model The live model.
      * @param storage The storage used for saving changes.
+     * @throws NullPointerException if any parameter is null.
      */
     public LogicManager(Model model, Storage storage) {
         this(model, storage, true, "");
@@ -63,8 +69,10 @@ public class LogicManager implements Logic {
      * @param storage The storage used for saving changes.
      * @param isStudentDataAvailable Whether startup loading succeeded or no data file existed.
      * @param startupMessage The message describing the outcome of startup loading.
+     * @throws NullPointerException if {@code model}, {@code storage}, or {@code startupMessage} is null.
      */
     public LogicManager(Model model, Storage storage, boolean isStudentDataAvailable, String startupMessage) {
+        requireAllNonNull(model, storage, startupMessage);
         this.model = model;
         this.storage = storage;
         this.isStudentDataAvailable = isStudentDataAvailable;
@@ -75,19 +83,22 @@ public class LogicManager implements Logic {
     /**
      * {@inheritDoc}
      * Executes modifying commands against a temporary model and publishes their changes only after saving succeeds.
-     * Commands that do not modify student data execute without saving. Startup loading failures block modifications.
+     * Commands that do not modify student data execute without saving. Startup loading failures block modifications,
+     * listing, and finding students.
      * An open attendance report is refreshed after attendance changes and closed by other successful commands.
      */
     @Override
     public CommandResult execute(String commandText) throws CommandException, ParseException {
+        requireNonNull(commandText);
         logger.info("----------------[USER COMMAND][" + commandText + "]");
 
         Command command = addressBookParser.parseCommand(commandText);
+        if (!isStudentDataAvailable
+                && (command.isModifyingData() || command instanceof ListCommand || command instanceof FindCommand)) {
+            throw new CommandException(MESSAGE_DATA_UNAVAILABLE);
+        }
         if (!command.isModifyingData()) {
             return updateDisplayedAttendance(command.execute(model));
-        }
-        if (!isStudentDataAvailable) {
-            throw new CommandException(MESSAGE_DATA_UNAVAILABLE);
         }
         if (command instanceof UndoCommand) {
             return updateDisplayedAttendance(executeUndo());
@@ -96,6 +107,7 @@ public class LogicManager implements Logic {
     }
 
     private CommandResult updateDisplayedAttendance(CommandResult result) {
+        requireNonNull(result);
         if (result.getAttendanceReport().isPresent()) {
             displayedAttendance = result.getAttendanceReport().get();
             return result;
@@ -110,18 +122,30 @@ public class LogicManager implements Logic {
     }
 
     private CommandResult executeAndSave(Command command) throws CommandException {
+        requireNonNull(command);
         AddressBook previousAddressBook = new AddressBook(model.getAddressBook());
         Model pendingModel = new ModelManager(model.getAddressBook(), model.getUserPrefs());
-        pendingModel.updateFilteredPersonList(model.getFilteredPersonListPredicate()::test);
+        pendingModel.updateFilteredPersonList(model.getFilteredPersonListPredicate());
         CommandResult result = command.execute(pendingModel);
         saveStudentData(pendingModel.getAddressBook());
+        recordUndoSnapshot(previousAddressBook, pendingModel.getAddressBook());
+        model.setAddressBook(pendingModel.getAddressBook());
+        model.updateFilteredPersonList(pendingModel.getFilteredPersonListPredicate());
+        return result;
+    }
+
+    /**
+     * Retains {@code previousAddressBook} for undo, unless the command left the student records unchanged.
+     */
+    private void recordUndoSnapshot(AddressBook previousAddressBook, ReadOnlyAddressBook updatedAddressBook) {
+        requireAllNonNull(previousAddressBook, updatedAddressBook);
+        if (previousAddressBook.equals(updatedAddressBook)) {
+            return;
+        }
         if (undoHistory.size() == MAX_UNDO_HISTORY_SIZE) {
             undoHistory.removeFirst();
         }
         undoHistory.addLast(previousAddressBook);
-        model.setAddressBook(pendingModel.getAddressBook());
-        model.updateFilteredPersonList(pendingModel.getFilteredPersonListPredicate()::test);
-        return result;
     }
 
     /**
@@ -143,6 +167,7 @@ public class LogicManager implements Logic {
     }
 
     private void saveStudentData(ReadOnlyAddressBook addressBook) throws CommandException {
+        requireNonNull(addressBook);
         try {
             storage.saveAddressBook(addressBook);
         } catch (DataStorageLocationException dsle) {

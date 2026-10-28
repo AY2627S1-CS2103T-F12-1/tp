@@ -33,6 +33,7 @@ public class AttendanceCommandTest {
 
     @Test
     public void execute_groupMembers_showsReportIncludingFilteredStudents() {
+        // EP: group has present and absent current members, including members hidden by a filter
         Person present = new PersonBuilder(ALICE).withLabels("Tutorial 1")
                 .withAttendance(new AttendanceRecord(DATE, GROUP)).build();
         Person absent = new PersonBuilder(BENSON).withLabels("Tutorial 1").build();
@@ -52,6 +53,7 @@ public class AttendanceCommandTest {
 
     @Test
     public void execute_noMembers_showsEmptyReport() {
+        // EP: requested group has zero current members
         Model expected = new ModelManager(model.getAddressBook(), new UserPrefs());
         AttendanceReport report = AttendanceReport.of(List.of(), DATE, GROUP);
 
@@ -86,6 +88,7 @@ public class AttendanceCommandTest {
 
     @Test
     public void constructor_nullField_throwsNullPointerException() {
+        // EP: each required report field is absent
         assertThrows(NullPointerException.class, () -> new AttendanceCommand(null, GROUP));
         assertThrows(NullPointerException.class, () -> new AttendanceCommand(DATE, null));
     }

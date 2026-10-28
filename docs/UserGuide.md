@@ -46,6 +46,8 @@ If a previously used monitor is disconnected, the saved window position is adjus
 You can resize the window down to 450 × 400 logical pixels. At higher scaling, fewer student cards fit at once;
 scroll the student list to reach the remaining students.
 
+**Disclaimer:** Do not run multiple instances of TeachAssist. Running multiple instances of TeachAssist will lead to each instance overriding the same savefile which can lead to unintended behaviour.
+
 --------------------------------------------------------------------------------------------------------------------
 
 ## Features
@@ -91,7 +93,7 @@ Format: `add n/NAME i/STUDENT_ID e/EMAIL [r/REMARK] [l/LABEL_NAME]`
 * `n/`, `i/`, and `e/` are compulsory and cannot be empty. Each can appear only once.
 * Parameters can appear in any order, including `r/` and `l/`. Prefixes are lowercase and case-sensitive.
 * Enter one command line. Leading and trailing whitespace around the command and each value is ignored.
-* A supported prefix at the start of a whitespace-separated token starts a parameter. Spaces or tabs can separate parameters.
+* A supported prefix at the start of a whitespace-separated token starts a parameter. Spaces can separate parameters.
 * Unknown alphabetic prefix tokens, such as `x/` or `p/`, are rejected, including inside remarks.
 * A prefix joined to other text does not start a parameter. For example, `https://example.com/n/Alex` remains remark text.
 
@@ -182,7 +184,7 @@ If at least one student exists, the expected successful output is:
 Listed all students.
 ```
 
-If there are no stored students, the displayed list remains empty and the command reports:
+If loading succeeded and there are no stored students, the displayed list remains empty and the command reports:
 
 ```text
 No students found.
@@ -200,6 +202,7 @@ are case-sensitive.
 | Parameter-like argument | `list n/Samuel` or `list n/` | `Invalid command format!` followed by `Usage: list` on the next line |
 | Misspelled command | `lisst` | `Unknown command.` |
 | Incorrect capitalisation | `List` or `LIST` | `Unknown command.` |
+| Student data failed to load | `list` | `Student data is unavailable because loading failed. Fix the data file and restart.` |
 
 ### Editing a student: `edit`
 
@@ -238,8 +241,10 @@ For a student named John Doe with label `Tutorial 1`, running `edit i/A0123456B 
 Edited student: John Doe; Student ID: A0123456B; Email: johndoe@example.com; Labels: [Tutorial 1]
 ```
 
-The feedback lists the updated name, Student ID, email, and labels. It does not include the remark; check the student
-card to see a changed remark. Multiple labels may be displayed in any order.
+The feedback lists the updated name, Student ID, email, and labels, followed by `; Remark: REMARK` when the student has
+a remark. For example, `edit i/A0123456B r/Needs help with recursion` reports
+`...; Labels: [Tutorial 1]; Remark: Needs help with recursion`. Labels are listed alphabetically, ignoring case,
+as on the student card.
 
 #### Errors
 
@@ -284,7 +289,8 @@ or `find e/KEYWORD [MORE_KEYWORDS]` or `find r/KEYWORD [MORE_KEYWORDS]` or `find
 * Label names follow the rules under `add`: 1–60 Unicode code points, at least one letter or digit, and only the
   permitted characters. Surrounding whitespace is ignored; internal spacing is preserved. Slashes and control
   characters are rejected.
-* Reports `N students listed.`, or `1 student listed.` for one match. If no students match, the displayed list is cleared and reports `0 students listed.`
+* Reports `N students listed.`, or `1 student listed.` for one match. If loading succeeded but no students match,
+  the displayed list is cleared and reports `0 students listed.`
 * Student records and the saved data file are unchanged. Use `list` to show all students again.
 
 Examples:
@@ -315,10 +321,11 @@ The former `filter` command has been replaced by `find l/LABEL_NAME`.
 | Empty search parameter | `Parameter l/ cannot be empty.` (or the supplied prefix) |
 | Invalid label | `Label names should be 1 to 60 characters long, contain at least one letter or digit, and only contain letters, digits, spaces, hyphens, underscores, apostrophes, parentheses, and periods.` |
 | Using the removed command, such as `filter l/Tutorial 1` | `Unknown command.` |
+| Student data failed to load | `Student data is unavailable because loading failed. Fix the data file and restart.` |
 
 Errors are checked in the order of words before the first prefix, unknown prefixes, repeated prefixes, missing
-prefixes, mixed search fields, empty values, then label validation. Failed commands preserve the displayed list,
-student records, and saved file.
+prefixes, mixed search fields, empty values, then label validation. For a valid search, data availability is checked
+before searching. Failed commands preserve the displayed list, student records, and saved file.
 
 ### Deleting a student: `delete`
 
@@ -331,7 +338,7 @@ Format: `delete i/STUDENT_ID`
 * Matching is case-insensitive: `delete i/a0123456b` and `delete i/A0123456B` identify the same student.
 * The student is located in the complete record list, even when hidden by a `find` filter.
 * The current filter is preserved after deletion. If the student was hidden, the visible list can stay unchanged.
-* Leading/trailing whitespace is ignored, and a tab can separate `delete` from `i/`. Prefixes remain lowercase.
+* Leading/trailing whitespace is ignored, and a space can separate `delete` from `i/`. Prefixes remain lowercase.
 * The command must occupy one line. Numeric index commands such as `delete 1` are no longer accepted.
 * Deletion becomes visible only after saving succeeds. A save failure retains the entire record and previous data file.
 
@@ -481,6 +488,9 @@ The attendance view replaces the student list:
 * A failed command leaves it open and unchanged.
 * Any other successful command, such as `list` or `undo`, returns to the student list.
 
+The narrowest supported window width is **450 logical pixels**. Long student names wrap in the attendance list, so the
+Present/Absent badge remains visible at that width.
+
 Examples:
 
 * `attendance d/2026-10-20 l/Tutorial 1`
@@ -541,6 +551,8 @@ Undid last change.
 
 * TeachAssist retains at most 100 earlier student-data snapshots for the current session. The snapshots contain the
   complete student records, including remarks, labels, and attendance.
+* A command that succeeds without changing the records, such as `clear` on an empty list or an `edit` that repeats the
+  current values, is not recorded. `undo` then reverses the latest command that did change the records.
 * A successful undo is destructive: it discards the state being reversed. There is no redo command or forward history.
   A later successful data change records the then-current state as a new predecessor.
 * Restoring a snapshot resets the displayed list to all students. It does not restore a previous `find` result, window
@@ -587,10 +599,10 @@ and only the first problem found is shown.
 
 If loading fails, TeachAssist starts with an empty student list and leaves the data file untouched:
 
-* Commands that change student records (`add`, `edit`, `delete`, `mark`, `unmark`, `clear`, and `undo`) are blocked with
+* Commands that change student records (`add`, `edit`, `delete`, `mark`, `unmark`, `clear`, and `undo`), as well as
+  `list` and `find`, are blocked with
   `Student data is unavailable because loading failed. Fix the data file and restart.`
-* Commands that do not change student records, such as `list`, `find`, `attendance`, `help`, and `exit`, remain
-  available.
+* `attendance`, `help`, and `exit` remain available.
 
 To recover, close TeachAssist, fix or restore the data file, and restart. Deleting the data file makes TeachAssist start
 with an empty student list.

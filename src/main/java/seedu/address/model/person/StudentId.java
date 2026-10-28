@@ -21,6 +21,8 @@ public class StudentId {
      * Constructs a {@code StudentId}.
      *
      * @param studentId A valid student ID.
+     * @throws IllegalArgumentException if the student ID is invalid.
+     * @throws NullPointerException if {@code studentId} is null.
      */
     public StudentId(String studentId) {
         requireNonNull(studentId);
@@ -30,6 +32,10 @@ public class StudentId {
 
     /**
      * Returns true if a given string is a valid student ID.
+     *
+     * @param test The string to check.
+     * @return True if the string is a valid student ID.
+     * @throws NullPointerException if {@code test} is null.
      */
     public static boolean isValidStudentId(String test) {
         requireNonNull(test);

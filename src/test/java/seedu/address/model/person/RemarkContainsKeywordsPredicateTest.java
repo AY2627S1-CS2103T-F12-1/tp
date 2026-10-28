@@ -2,8 +2,10 @@ package seedu.address.model.person;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -11,6 +13,27 @@ import org.junit.jupiter.api.Test;
 import seedu.address.testutil.PersonBuilder;
 
 public class RemarkContainsKeywordsPredicateTest {
+
+    @Test
+    public void constructor_mutableKeywords_takesDefensiveCopy() {
+        // EP: Mutating the caller's list after construction must not change the predicate's search criteria.
+        List<String> keywords = new ArrayList<>(List.of("recursion"));
+        RemarkContainsKeywordsPredicate predicate = new RemarkContainsKeywordsPredicate(keywords);
+        keywords.clear();
+        keywords.add("loops");
+
+        assertTrue(predicate.test(new PersonBuilder().withRemark("recursion").build()));
+        assertFalse(predicate.test(new PersonBuilder().withRemark("loops").build()));
+    }
+
+    @Test
+    public void constructor_nullKeywordsOrElement_throwsNullPointerException() {
+        // EP: A null list or a list containing a null keyword violates the constructor's input contract.
+        assertThrows(NullPointerException.class, () -> new RemarkContainsKeywordsPredicate(null));
+        List<String> keywords = new ArrayList<>();
+        keywords.add(null);
+        assertThrows(NullPointerException.class, () -> new RemarkContainsKeywordsPredicate(keywords));
+    }
 
     @Test
     public void equals() {

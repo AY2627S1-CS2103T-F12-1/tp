@@ -37,6 +37,9 @@ public class MainAppTest {
         Logic logic = new TestApp().loadLogic(storage);
         assertEquals(MainApp.MESSAGE_NO_EXISTING_DATA, logic.getStartupMessage());
         assertEquals(0, logic.getFilteredPersonList().size());
+        // EP: a missing file starts with available, empty student data
+        assertEquals("No students found.", logic.execute("list").getFeedbackToUser());
+        assertEquals("0 students listed.", logic.execute("find n/Alice").getFeedbackToUser());
         logic.execute("add n/Samuel i/A0123456B e/sam@example.com");
         assertEquals(1, storage.readAddressBook().orElseThrow().getPersonList().size());
     }
@@ -50,7 +53,10 @@ public class MainAppTest {
         assertEquals(0, logic.getFilteredPersonList().size());
         assertThrows(CommandException.class, LogicManager.MESSAGE_DATA_UNAVAILABLE, ()
             -> logic.execute("add n/Samuel i/A0123456B e/sam@example.com"));
-        logic.execute("list");
+        // EP: corrupt student data blocks both list and find after startup
+        assertThrows(CommandException.class, LogicManager.MESSAGE_DATA_UNAVAILABLE, () -> logic.execute("list"));
+        assertThrows(CommandException.class, LogicManager.MESSAGE_DATA_UNAVAILABLE, () ->
+                logic.execute("find n/Alice"));
         assertEquals("corrupt data", Files.readString(storage.getAddressBookFilePath()));
     }
 
@@ -72,11 +78,11 @@ public class MainAppTest {
         assertEquals(JsonAddressBookStorage.MESSAGE_INVALID_FILE, logic.getStartupMessage());
         assertEquals(0, logic.getFilteredPersonList().size());
         for (String command : List.of("add n/Samuel i/A0123456B e/sam@example.com", "clear",
-                "delete i/A0123456B", "edit i/A0123456B n/Samuel")) {
+                "delete i/A0123456B", "edit i/A0123456B n/Samuel", "list", "find n/Alice")) {
             assertThrows(CommandException.class, LogicManager.MESSAGE_DATA_UNAVAILABLE, ()
                 -> logic.execute(command));
         }
-        logic.execute("list");
+        logic.execute("help");
         assertEquals(contents, Files.readString(storage.getAddressBookFilePath()));
     }
 

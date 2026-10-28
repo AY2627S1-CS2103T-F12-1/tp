@@ -611,6 +611,8 @@ History begins empty on every application start and is never written to JSON.
 Before a normal data-changing command runs, `LogicManager` copies the live address book. It executes the command on
 the existing pending model and saves that proposed address book. Only after the save succeeds does it append the
 pre-change snapshot, discarding the oldest snapshot first when the deque is full, and publish the pending model.
+If the saved address book equals the snapshot, as for `clear` on an empty list, no snapshot is appended, so `undo`
+never reports a change it cannot show.
 Thus parsing, validation, execution, or save failures leave the live records and undo history unchanged.
 
 For `undo`, `LogicManager` examines the newest snapshot without removing it. It saves that snapshot before replacing
@@ -1225,14 +1227,68 @@ RAM, disk type, screen settings, dataset, timings, and any failures in the relea
 
 2. Measure three launches from starting the Java process until the window is usable and reports `1000 students loaded.`.
    Each launch should take at most 5 seconds. Retain the original fixture for repeatable runs.
-3. After one warm-up of each operation, measure 20 runs each of `find n/Performance`, `list`,
-   `attendance d/2026-10-20 l/Tutorial 1`, and `edit i/T0000000A r/Performance check`.
-   Time from pressing Enter until both feedback and the resulting view finish updating, using a screen recording
-   or equivalent timing tool. For at least 19 runs per command, the elapsed time should be at most 1 second.
-4. Also measure 20 `mark i/T0000000A d/2026-10-20 l/Tutorial 1` / `undo` pairs after a warm-up pair.
-   Each undo restores the unmarked state so the next mark succeeds. Apply the same 19-of-20 target separately
-   to mark and undo. Outside the timed commands, use `attendance d/2026-10-20 l/Tutorial 1` to verify 100 members,
-   with 1 present and 99 absent after mark, and 0 present and 100 absent after undo.
-5. Scroll to the end of the full student list and confirm that the command box stays usable and no cards are missing.
+3. After one warm-up of each operation, measure 20 runs each of `find n/Performance`, `list`, and
+   `attendance d/2026-10-20 l/Tutorial 1`. Time from pressing Enter until both feedback and the resulting view
+   finish updating, using a screen recording or equivalent timing tool. For at least 19 runs per command, the
+   elapsed time should be at most 1 second.
+4. For `add`, `edit`, `delete`, and `clear`, perform one untimed warm-up run followed by `undo` to restore the
+   initial state. Then run that modifying command 20 times, executing `undo` after each successful run to restore
+   the state needed for the next run. Time the modifying command and each `undo` separately. At least 19 of the
+   20 runs of the modifying command must take at most 1 second. Similarly, at least 19 of the 20 succeeding `undo`
+   commands must take at most 1 second.
+
+   * `add n/Added Performance i/T1000000A e/added@example.com l/Tutorial 1`
+   * `edit i/T0000000A r/Performance check`
+   * `delete i/T0000000A`
+   * `mark i/T0000000A d/2026-10-20 l/Tutorial 1`
+   * `unmark i/T0000000A d/2026-10-01 l/Tutorial 1`
+   * `clear`
+
+   For `mark` and `unmark`, perform separate measurements from the student list and from the corresponding
+   attendance report. For each starting view, perform one untimed warm-up run followed by `undo`, then execute the
+   modifying command 20 times with `undo` after each successful run. Before every warm-up and timed command, use
+   untimed setup to establish the starting view: `list` for the student-list measurement, or the relevant
+   `attendance` command for the attendance-report measurement: `attendance d/2026-10-20 l/Tutorial 1` for mark and
+   `attendance d/2026-10-01 l/Tutorial 1` for unmark. `undo` closes the report, so this setup keeps every timed
+   command in that measurement on the same starting view. Apply the 19-of-20 requirement separately to each
+   starting-view measurement and its corresponding `undo` commands.
+
+   Outside the timed commands, verify that add and delete respectively produce 1001 and 999 students before undo,
+   and 1000 students after undo. Verify that edit changes and restores the remark. For mark, use
+   `attendance d/2026-10-20 l/Tutorial 1` to verify 100 members with 1 present and 99 absent after mark, and
+   0 present and 100 absent after undo. For unmark, use `attendance d/2026-10-01 l/Tutorial 1` to verify 100 present
+   before unmark, 99 present and 1 absent after unmark, and 100 present after undo.
+   Verify that clear produces an empty list and that undo restores all 1000 students.
+5. Also measure representative data-dependent rejected commands. After one untimed warm-up of each, run each command
+   20 times and apply the 19-of-20 requirement. No `undo` is needed because both commands must leave the fixture
+   unchanged.
+
+   * `add n/Performance Student i/T0000999A e/student999@example.com l/Tutorial 10`
+   * `mark i/T9999999A d/2026-10-20 l/Tutorial 1`
+
+   Verify that the first command reports a duplicate Student ID and the second reports a missing student ID, and that
+   the original 1000 students remain unchanged.
+6. After the fixed-state measurements, perform the following stateful sequences. Begin each sequence from the normal
+   student list. Time every command individually.
+   At least 19 of the 20 modifying commands, and at least 19 of the 20 following `undo` commands, must take at most
+   1 second. Verify the stated intermediate state, then verify that all 20 undos restore the original 1000-student
+   fixture before beginning the next sequence.
+
+   * Add 20 students consecutively with IDs `T1000000A` through `T1000019A`, then undo all 20 adds. Verify 1020
+     students before undoing and 1000 afterwards.
+   * Edit 20 different fixture students with a distinct replacement remark, then undo all 20 edits. Verify the
+     edited remarks before undoing and the original remarks afterwards.
+   * Delete 20 different fixture students, then undo all 20 deletes. Verify 980 students before undoing and 1000
+     afterwards.
+   * Mark 20 different fixture students for `2026-10-20`, using each student's existing tutorial label, then undo
+     all 20 marks. Verify that the 20 records are present before undoing and absent afterwards.
+   * Unmark the existing `2026-10-01` attendance records of 20 different fixture students, using each student's
+     existing tutorial label, then undo all 20 unmarks. Verify that the 20 records are absent before undoing and
+     restored afterwards.
+
+   `clear` is excluded from these sequences because a second consecutive clear operates on an already empty list.
+   `help`, `exit`, and syntax or parse failures are excluded because their work does not depend on the 1000-student
+   dataset; functional testing covers those paths.
+7. Scroll to the end of the full student list and confirm that the command box stays usable and no cards are missing.
    Record freezes or rendering errors separately from command timings. A failure requires investigation; this dataset
    does not establish performance for maximum-length remarks or unbounded attendance histories.
