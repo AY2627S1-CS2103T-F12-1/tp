@@ -10,6 +10,8 @@ import seedu.address.commons.core.GuiSettings;
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.commands.Command;
 import seedu.address.logic.commands.CommandResult;
+import seedu.address.logic.commands.FindCommand;
+import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.UndoCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.AddressBookParser;
@@ -75,7 +77,8 @@ public class LogicManager implements Logic {
     /**
      * {@inheritDoc}
      * Executes modifying commands against a temporary model and publishes their changes only after saving succeeds.
-     * Commands that do not modify student data execute without saving. Startup loading failures block modifications.
+     * Commands that do not modify student data execute without saving. Startup loading failures block modifications,
+     * listing, and finding students.
      * An open attendance report is refreshed after attendance changes and closed by other successful commands.
      */
     @Override
@@ -83,11 +86,12 @@ public class LogicManager implements Logic {
         logger.info("----------------[USER COMMAND][" + commandText + "]");
 
         Command command = addressBookParser.parseCommand(commandText);
+        if (!isStudentDataAvailable
+                && (command.isModifyingData() || command instanceof ListCommand || command instanceof FindCommand)) {
+            throw new CommandException(MESSAGE_DATA_UNAVAILABLE);
+        }
         if (!command.isModifyingData()) {
             return updateDisplayedAttendance(command.execute(model));
-        }
-        if (!isStudentDataAvailable) {
-            throw new CommandException(MESSAGE_DATA_UNAVAILABLE);
         }
         if (command instanceof UndoCommand) {
             return updateDisplayedAttendance(executeUndo());
