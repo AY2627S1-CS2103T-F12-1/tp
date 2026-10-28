@@ -90,7 +90,7 @@ public class JsonAddressBookStorageTest {
 
     @Test
     public void readAndSaveAddressBook_paddedFields_savesTrimmedValues() throws Exception {
-        // EP: Unicode spaces in manually edited fields load and save as ordinary spaces with padding removed.
+        // EP: Unicode padding is removed; internal Unicode spaces in remarks are preserved.
         Path file = testFolder.resolve("padded.json");
         String originalContents = """
                 {"persons":[{
@@ -107,8 +107,9 @@ public class JsonAddressBookStorageTest {
         ReadOnlyAddressBook restored = storage.readAddressBook().orElseThrow();
         AddressBook expected = new AddressBook();
         expected.addPerson(new PersonBuilder(ALICE).withName("Alice Pauline").withStudentId("A1234567B")
-                .withEmail("Alice@example.com").withRemark("Follow up  soon\nNext week").withLabels("Tutorial  1")
-                .withAttendance(new AttendanceRecord(LocalDate.parse("2026-10-20"), new Label("Tutorial  1")))
+                .withEmail("Alice@example.com").withRemark("Follow\u2009up\u202f\u202fsoon\nNext week")
+                .withLabels("Tutorial\u00a0\u00a01")
+                .withAttendance(new AttendanceRecord(LocalDate.parse("2026-10-20"), new Label("Tutorial\u2009\u20091")))
                 .build());
 
         assertEquals(expected, restored);
@@ -131,6 +132,28 @@ public class JsonAddressBookStorageTest {
 
         assertEquals(original, new AddressBook(restored));
         assertEquals(person.getRemark(), restored.getPersonList().get(0).getRemark());
+    }
+
+    @Test
+    public void readAndSaveAddressBook_withUnicodeRemark_preservesInternalSpaces() throws Exception {
+        Path file = testFolder.resolve("UnicodeRemarksAddressBook.json");
+        String remark = "Meet\u00a0at 2pm\nFollow\u2009up\u202f\u202fsoon\u3000please";
+        Person person = new PersonBuilder(ALICE).withRemark(remark).withLabels("Tutorial\u00a0\u20091")
+                .withAttendance(new AttendanceRecord(LocalDate.parse("2026-10-20"),
+                        new Label("Tutorial\u00a0\u20091"))).build();
+        AddressBook original = new AddressBook();
+        original.addPerson(person);
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(file);
+
+        storage.saveAddressBook(original);
+        ReadOnlyAddressBook restored = storage.readAddressBook().orElseThrow();
+        assertEquals(remark, restored.getPersonList().get(0).getRemark().value);
+        assertEquals(original, restored);
+
+        storage.saveAddressBook(restored);
+        ReadOnlyAddressBook reloaded = new JsonAddressBookStorage(file).readAddressBook().orElseThrow();
+        assertEquals(remark, reloaded.getPersonList().get(0).getRemark().value);
+        assertEquals(original, reloaded);
     }
 
     @Test

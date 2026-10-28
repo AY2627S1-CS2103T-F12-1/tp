@@ -59,7 +59,7 @@ public class Label {
     private static boolean isAllowedCodePoint(int codePoint) {
         return Character.isLetterOrDigit(codePoint)
                 || isCombiningMark(codePoint)
-                || codePoint == ' '
+                || Character.getType(codePoint) == Character.SPACE_SEPARATOR
                 || codePoint == '-'
                 || codePoint == '_'
                 || codePoint == '\''

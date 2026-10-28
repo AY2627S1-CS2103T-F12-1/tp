@@ -23,6 +23,7 @@ import seedu.address.logic.commands.ExitCommand;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.HelpCommand;
 import seedu.address.logic.commands.ListCommand;
+import seedu.address.logic.commands.MarkCommand;
 import seedu.address.logic.commands.UndoCommand;
 import seedu.address.logic.commands.UnmarkCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
@@ -44,7 +45,9 @@ public class AddressBookParserTest {
         // EP: Unicode spaces and Hangul fillers separate the command, prefixes, and search keywords.
         for (String space : List.of("\u00a0", "\u2007", "\u2009", "\u202f", "\u3000",
                 "\u115f", "\u1160", "\u3164", "\uffa0")) {
-            assertEquals(parser.parseCommand("add n/Alice Pauline i/A1234567B e/alice@example.com l/Tutorial 1"),
+            Person expected = new PersonBuilder().withName("Alice Pauline").withStudentId("A1234567B")
+                    .withEmail("alice@example.com").withLabels("Tutorial" + space + "1").withRemark("").build();
+            assertEquals(new AddCommand(expected),
                     parser.parseCommand(space + "add" + space + "n/Alice" + space + "Pauline" + space
                             + "i/A1234567B" + space + "e/alice@example.com" + space + "l/Tutorial" + space + "1"));
             assertEquals(parser.parseCommand("find n/Alice Pauline"),
@@ -55,6 +58,36 @@ public class AddressBookParserTest {
             assertTrue(parser.parseCommand("list" + space) instanceof ListCommand);
             assertTrue(new UndoCommandParser().parse(space) instanceof UndoCommand);
             assertTrue(new ListCommandParser().parse(space) instanceof ListCommand);
+        }
+    }
+
+    @Test
+    public void parseCommand_addAndEdit_preserveUnicodeRemarkAndLabels() throws Exception {
+        for (String space : List.of(" ", "\u00a0", "\u2007", "\u2009", "\u202f", "\u3000",
+                "\u115f", "\u1160", "\u3164", "\uffa0")) {
+            String remark = "Meet" + space + space + "at 2pm";
+            String label = "Tutorial" + space + space + "1";
+            String fields = space + "r/" + space + remark + space + "l/" + space + label + space;
+            Person person = new PersonBuilder().withName("Alice Pauline").withStudentId("A1234567B")
+                    .withEmail("alice@example.com").withRemark(remark).withLabels(label).build();
+            assertEquals(new AddCommand(person), parser.parseCommand(space + "add" + space
+                    + "n/Alice Pauline i/A1234567B e/alice@example.com" + fields));
+            EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withRemark(remark)
+                    .withLabelsToAdd(label).build();
+            assertEquals(new EditCommand(person.getStudentId(), descriptor),
+                    parser.parseCommand(space + "edit" + space + "i/A1234567B" + fields));
+            EditPersonDescriptor removal = new EditPersonDescriptorBuilder().withLabelsToRemove(label).build();
+            assertEquals(new EditCommand(person.getStudentId(), removal),
+                    parser.parseCommand("edit i/A1234567B" + space + "dl/" + space + label + space));
+            assertEquals(new FindCommand(new LabelMatchesPredicate(new Label(label))),
+                    parser.parseCommand("find" + space + "l/" + space + label + space));
+            LocalDate date = LocalDate.parse("2026-10-20");
+            assertEquals(new MarkCommand(person.getStudentId(), date, new Label(label)),
+                    parser.parseCommand("mark i/A1234567B d/2026-10-20 l/" + label));
+            assertEquals(new UnmarkCommand(person.getStudentId(), date, new Label(label)),
+                    parser.parseCommand("unmark i/A1234567B d/2026-10-20 l/" + label));
+            assertEquals(new AttendanceCommand(date, new Label(label)),
+                    parser.parseCommand("attendance d/2026-10-20 l/" + label));
         }
     }
 

@@ -19,14 +19,14 @@ public class ArgumentTokenizerTest {
     private final Prefix dashT = new Prefix("-t");
 
     @Test
-    public void tokenize_unicodeSpaces_recognisesPrefixesAndNormalisesValues() {
+    public void tokenize_unicodeSpaces_recognisesPrefixesAndPreservesValues() {
         // EP: Unicode spaces and Hangul fillers separate prefixes, pad values, and occur inside values.
         for (String space : List.of("\u00a0", "\u2007", "\u2009", "\u202f", "\u3000",
                 "\u115f", "\u1160", "\u3164", "\uffa0")) {
             ArgumentMultimap arguments = ArgumentTokenizer.tokenize(space + "p/first" + space + "value"
                     + space + "-t" + space + "second" + space, pSlash, dashT);
             assertEquals("", arguments.getPreamble());
-            assertValues(arguments, pSlash, "first value");
+            assertValues(arguments, pSlash, "first" + space + "value");
             assertValues(arguments, dashT, "second");
             assertEquals(new Prefix("x/"), ArgumentTokenizer.findUnknownPrefix(
                     "p/value" + space + "x/unknown", Set.of(pSlash)).orElseThrow());

@@ -108,7 +108,7 @@ public class ParserUtil {
      */
     public static Label parseLabel(String label) throws ParseException {
         requireNonNull(label);
-        String trimmedLabel = StringUtil.normaliseSpaces(label).trim();
+        String trimmedLabel = StringUtil.trimSpaces(label);
         if (!Label.isValidLabelName(trimmedLabel)) {
             throw new ParseException(Label.MESSAGE_CONSTRAINTS);
         }
@@ -117,7 +117,7 @@ public class ParserUtil {
 
     /**
      * Parses a {@code String remark} into a {@code Remark}.
-     * Normalises Unicode space separators and trims surrounding whitespace, preserving internal spacing and case.
+     * Trims surrounding whitespace, preserving internal spacing and case, including Unicode spaces.
      * Empty and whitespace-only input produces an empty remark. The length limit applies after trimming.
      *
      * @param remark The non-null remark text.
@@ -127,7 +127,7 @@ public class ParserUtil {
      */
     public static Remark parseRemark(String remark) throws ParseException {
         requireNonNull(remark);
-        String trimmedRemark = StringUtil.normaliseSpaces(remark).trim();
+        String trimmedRemark = StringUtil.trimSpaces(remark);
         if (!Remark.isValidRemark(trimmedRemark)) {
             throw new ParseException(Remark.MESSAGE_CONSTRAINTS);
         }

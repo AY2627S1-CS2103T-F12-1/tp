@@ -43,13 +43,15 @@ public class AddressBookParser {
      * @throws ParseException if the user input does not conform to the expected format
      */
     public Command parseCommand(String userInput) throws ParseException {
-        final Matcher matcher = BASIC_COMMAND_FORMAT.matcher(StringUtil.normaliseSpaces(userInput).trim());
+        final String trimmedInput = StringUtil.trimSpaces(userInput);
+        final Matcher matcher = BASIC_COMMAND_FORMAT.matcher(StringUtil.normaliseSpaces(trimmedInput));
         if (!matcher.matches()) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, HelpCommand.MESSAGE_USAGE));
         }
 
         final String commandWord = matcher.group("commandWord");
-        final String arguments = matcher.group("arguments");
+        // Normalisation preserves character positions; extract values from the original input.
+        final String arguments = trimmedInput.substring(matcher.start("arguments"));
 
         // Note to developers: Change LOG_LEVEL in LogsCenter to enable lower level (i.e., FINE, FINER and lower)
         // log messages such as the one below.
@@ -64,7 +66,7 @@ public class AddressBookParser {
             case AttendanceCommand.COMMAND_WORD -> new AttendanceCommandParser().parse(arguments);
             case UnmarkCommand.COMMAND_WORD -> new UnmarkCommandParser().parse(arguments);
             case ClearCommand.COMMAND_WORD -> {
-                if (!arguments.isBlank()) {
+                if (!StringUtil.trimSpaces(arguments).isEmpty()) {
                     throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, ClearCommand.MESSAGE_USAGE));
                 }
                 yield new ClearCommand();
@@ -73,13 +75,13 @@ public class AddressBookParser {
             case ListCommand.COMMAND_WORD -> new ListCommandParser().parse(arguments);
             case UndoCommand.COMMAND_WORD -> new UndoCommandParser().parse(arguments);
             case ExitCommand.COMMAND_WORD -> {
-                if (!arguments.isBlank()) {
+                if (!StringUtil.trimSpaces(arguments).isEmpty()) {
                     throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, ExitCommand.MESSAGE_USAGE));
                 }
                 yield new ExitCommand();
             }
             case HelpCommand.COMMAND_WORD -> {
-                if (!arguments.isBlank()) {
+                if (!StringUtil.trimSpaces(arguments).isEmpty()) {
                     throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, HelpCommand.MESSAGE_USAGE));
                 }
                 yield new HelpCommand();

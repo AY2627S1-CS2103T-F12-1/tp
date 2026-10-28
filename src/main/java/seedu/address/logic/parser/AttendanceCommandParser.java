@@ -34,7 +34,7 @@ public class AttendanceCommandParser implements Parser<AttendanceCommand> {
      */
     @Override
     public AttendanceCommand parse(String args) throws ParseException {
-        String trimmedArgs = StringUtil.normaliseSpaces(args).trim();
+        String trimmedArgs = StringUtil.trimSpaces(args);
         ArgumentMultimap arguments = ArgumentTokenizer.tokenize(trimmedArgs, PREFIX_DATE, PREFIX_LABEL);
         validateStructure(trimmedArgs, arguments);
 

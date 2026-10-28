@@ -146,30 +146,31 @@ public class JsonAdaptedPersonTest {
 
     @Test
     public void toModelType_hangulFillerLabels_detectsDuplicatesAndBlankValues() {
-        // EP: Filler-only labels are blank; filler-separated labels match labels containing ordinary spaces.
+        // EP: Filler-only labels are blank; duplicate labels preserve identical internal fillers.
         for (String filler : new String[] {"\u115f", "\u1160", "\u3164", "\uffa0"}) {
-            // BVA: A filler-only label has zero meaningful characters after normalisation and trimming.
+            // BVA: A filler-only label has zero meaningful characters after trimming.
             assertThrows(IllegalValueException.class, Label.MESSAGE_CONSTRAINTS, () ->
                     new JsonAdaptedLabel(filler).toModelType());
             JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_STUDENT_ID, VALID_EMAIL,
-                    List.of(new JsonAdaptedLabel("Tutorial 1"), new JsonAdaptedLabel("Tutorial" + filler + "1")), "");
+                    List.of(new JsonAdaptedLabel("Tutorial" + filler + "1"),
+                            new JsonAdaptedLabel("tutorial" + filler + "1")), "");
             assertThrows(IllegalValueException.class, MESSAGE_DUPLICATE_LABEL, person::toModelType);
         }
     }
 
     @Test
     public void toModelType_paddedDuplicateLabels_throwsIllegalValueException() {
-        // EP: Labels differing only in Unicode spacing, surrounding whitespace, and case are duplicates.
+        // EP: Labels with identical internal Unicode spaces differing only in padding and case are duplicates.
         JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_STUDENT_ID, VALID_EMAIL,
-                List.of(new JsonAdaptedLabel("Tutorial 1"), new JsonAdaptedLabel(" \ttutorial\u00a01\n")), "");
+                List.of(new JsonAdaptedLabel("Tutorial\u00a01"), new JsonAdaptedLabel(" \ttutorial\u00a01\n")), "");
         assertThrows(IllegalValueException.class, MESSAGE_DUPLICATE_LABEL, person::toModelType);
     }
 
     @Test
     public void toModelType_paddedDuplicateAttendance_throwsIllegalValueException() {
-        // EP: Matching dates and groups after Unicode space normalisation and case comparison are duplicates.
+        // EP: Matching dates and groups after trimming padding and ignoring case are duplicates.
         JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_STUDENT_ID, VALID_EMAIL,
-                List.of(), "", List.of(new JsonAdaptedAttendanceRecord("2026-10-20", "Tutorial 1"),
+                List.of(), "", List.of(new JsonAdaptedAttendanceRecord("2026-10-20", "Tutorial\u202f1"),
                         new JsonAdaptedAttendanceRecord("\u30002026-10-20\n", " \ttutorial\u202f1\n")));
         assertThrows(IllegalValueException.class, MESSAGE_DUPLICATE_ATTENDANCE, person::toModelType);
     }

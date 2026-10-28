@@ -18,7 +18,7 @@ import seedu.address.commons.util.StringUtil;
  * 2. Leading and trailing whitespaces of an argument value will be discarded.<br>
  * 3. An argument may be repeated and all its values will be accumulated e.g. the value of {@code t/}
  *    in the above example.<br>
- * 4. Unicode space separators are treated as ASCII spaces in prefixes and values.<br>
+ * 4. Unicode space separators are recognised around prefixes; internal value characters are preserved.<br>
  */
 public class ArgumentTokenizer {
 
@@ -56,7 +56,8 @@ public class ArgumentTokenizer {
     public static ArgumentMultimap tokenize(String argsString, Prefix... prefixes) {
         String normalisedArgs = StringUtil.normaliseSpaces(argsString);
         List<PrefixPosition> positions = findAllPrefixPositions(normalisedArgs, prefixes);
-        return extractArguments(normalisedArgs, positions);
+        // Normalisation preserves positions, so values can be extracted without changing their characters.
+        return extractArguments(argsString, positions);
     }
 
     /**
@@ -157,7 +158,7 @@ public class ArgumentTokenizer {
         int valueStartPos = currentPrefixPosition.getStartPosition() + prefix.getPrefix().length();
         String value = argsString.substring(valueStartPos, nextPrefixPosition.getStartPosition());
 
-        return value.trim();
+        return StringUtil.trimSpaces(value);
     }
 
     /**

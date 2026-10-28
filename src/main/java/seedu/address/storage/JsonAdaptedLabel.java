@@ -36,7 +36,7 @@ class JsonAdaptedLabel {
 
     /**
      * Converts this Jackson-friendly adapted label object into the model's {@code Label} object.
-     * Normalises Unicode space separators and trims surrounding whitespace before validation.
+     * Trims surrounding whitespace before validation, preserving internal Unicode spaces.
      *
      * @throws IllegalValueException if there were any data constraints violated in the adapted label.
      */
@@ -44,7 +44,7 @@ class JsonAdaptedLabel {
         if (labelName == null) {
             throw new IllegalValueException(Label.MESSAGE_CONSTRAINTS);
         }
-        final String trimmedLabelName = StringUtil.normaliseSpaces(labelName).trim();
+        final String trimmedLabelName = StringUtil.trimSpaces(labelName);
         if (!Label.isValidLabelName(trimmedLabelName)) {
             throw new IllegalValueException(Label.MESSAGE_CONSTRAINTS);
         }

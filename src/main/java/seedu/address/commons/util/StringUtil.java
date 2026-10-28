@@ -27,6 +27,19 @@ public class StringUtil {
     }
 
     /**
+     * Trims surrounding ASCII control whitespace, Unicode space separators, and supported Hangul fillers.
+     * Preserves all characters inside the text, including Unicode spaces and line breaks.
+     *
+     * @param text The non-null text to trim.
+     * @return Text with the same surrounding padding removed as {@code normaliseSpaces(text).trim()}.
+     */
+    public static String trimSpaces(String text) {
+        requireNonNull(text);
+        return text.replaceAll("\\A[\\x00-\\x20\\p{Zs}\\u115F\\u1160\\u3164\\uFFA0]+"
+                + "|[\\x00-\\x20\\p{Zs}\\u115F\\u1160\\u3164\\uFFA0]+\\z", "");
+    }
+
+    /**
      * Returns true if the {@code sentence} contains the {@code word}.
      *   Ignores case, but a full word match is required.
      *   <br>examples:<pre>

@@ -47,7 +47,7 @@ public class AddCommandParser implements Parser<AddCommand> {
      */
     public AddCommand parse(String args) throws ParseException {
         requireNonNull(args);
-        String trimmedArgs = StringUtil.normaliseSpaces(args).trim();
+        String trimmedArgs = StringUtil.trimSpaces(args);
         ArgumentMultimap argMultimap =
                 ArgumentTokenizer.tokenize(trimmedArgs, PREFIX_NAME, PREFIX_STUDENT_ID, PREFIX_EMAIL,
                         PREFIX_REMARK, PREFIX_LABEL);

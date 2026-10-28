@@ -46,7 +46,7 @@ public class EditCommandParser implements Parser<EditCommand> {
      */
     public EditCommand parse(String args) throws ParseException {
         requireNonNull(args);
-        String trimmedArgs = StringUtil.normaliseSpaces(args).trim();
+        String trimmedArgs = StringUtil.trimSpaces(args);
         ArgumentMultimap arguments = ArgumentTokenizer.tokenize(trimmedArgs,
                 PREFIX_STUDENT_ID, PREFIX_NAME, PREFIX_EMAIL, PREFIX_REMARK, PREFIX_LABEL, PREFIX_DELETE_LABEL);
         validateStructure(trimmedArgs, arguments);

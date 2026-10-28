@@ -41,7 +41,7 @@ class JsonAdaptedAttendanceRecord {
 
     /**
      * Converts this adapted record into its validated model form.
-     * Normalises Unicode space separators and trims surrounding whitespace from the date and group before validation.
+     * Normalises the date and trims surrounding whitespace, preserving internal spaces in the group label.
      *
      * @throws IllegalValueException if the date or group is invalid.
      */
@@ -62,7 +62,7 @@ class JsonAdaptedAttendanceRecord {
         if (group == null) {
             throw new IllegalValueException(Label.MESSAGE_CONSTRAINTS);
         }
-        final String trimmedGroup = StringUtil.normaliseSpaces(group).trim();
+        final String trimmedGroup = StringUtil.trimSpaces(group);
         if (!Label.isValidLabelName(trimmedGroup)) {
             throw new IllegalValueException(Label.MESSAGE_CONSTRAINTS);
         }

@@ -33,14 +33,15 @@ public class ParserUtilTest {
 
     @Test
     public void parse_unicodeSpaces_normalisesBeforeValidation() throws Exception {
-        // EP: Unicode spaces and Hangul fillers follow each field's ordinary space rules, including trimming.
+        // EP: Unicode padding is trimmed; labels and remarks preserve internal characters.
         for (String space : new String[] {"\u00a0", "\u2007", "\u2009", "\u202f", "\u3000",
             "\u115f", "\u1160", "\u3164", "\uffa0"}) {
             assertEquals(new Name("Rachel Walker"), ParserUtil.parseName(space + "Rachel" + space + "Walker" + space));
             assertEquals(new StudentId(VALID_STUDENT_ID), ParserUtil.parseStudentId(space + VALID_STUDENT_ID + space));
             assertEquals(new Email(VALID_EMAIL), ParserUtil.parseEmail(space + VALID_EMAIL + space));
-            assertEquals(new Label("Tutorial  1"), ParserUtil.parseLabel(space + "Tutorial" + space + space + "1"));
-            assertEquals(new Remark("Follow up\nNext week"),
+            assertEquals(new Label("Tutorial" + space + space + "1"),
+                    ParserUtil.parseLabel(space + "Tutorial" + space + space + "1"));
+            assertEquals(new Remark("Follow" + space + "up\nNext week"),
                     ParserUtil.parseRemark(space + "Follow" + space + "up\nNext week" + space));
             assertEquals(LocalDate.parse("2026-10-20"), ParserUtil.parseDate(space + "2026-10-20" + space));
             assertEquals(INDEX_FIRST_PERSON, ParserUtil.parseIndex(space + "1" + space));
@@ -62,7 +63,7 @@ public class ParserUtilTest {
     public void parseLabel_unicodeSpaces_checksNormalisedLengthBoundaries() throws Exception {
         // BVA: A label at the maximum length is accepted; one character above it is rejected after normalisation.
         String label = "a".repeat(Label.MAX_NAME_LENGTH - 2) + "\u00a0b";
-        assertEquals(new Label("a".repeat(Label.MAX_NAME_LENGTH - 2) + " b"),
+        assertEquals(new Label(label),
                 ParserUtil.parseLabel("\u3000" + label + "\u202f"));
         assertThrows(ParseException.class, () -> ParserUtil.parseLabel("\u3000" + label + "b\u202f"));
     }

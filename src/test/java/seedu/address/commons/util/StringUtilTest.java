@@ -12,6 +12,19 @@ import org.junit.jupiter.api.Test;
 public class StringUtilTest {
 
     @Test
+    public void trimSpaces_preservesInternalCharacters() {
+        String text = "Meet\u00a0at\u2009\u202f2pm\nNext\u3000week\u115f!";
+        String padding = " \t\r\n\u00a0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007"
+                + "\u2008\u2009\u200a\u202f\u205f\u3000\u115f\u1160\u3164\uffa0";
+        assertEquals(text, StringUtil.trimSpaces(padding + text + padding));
+        assertEquals(text, StringUtil.trimSpaces(text));
+        assertEquals("", StringUtil.trimSpaces(padding));
+        assertEquals("", StringUtil.trimSpaces(""));
+        assertEquals("\u200btext\ufeff", StringUtil.trimSpaces("\u200btext\ufeff"));
+        assertThrows(NullPointerException.class, () -> StringUtil.trimSpaces(null));
+    }
+
+    @Test
     public void normaliseSpaces_unicodeSeparators_returnsAsciiSpaces() {
         // EP: Every Unicode space separator, including non-breaking spaces, is an ordinary space.
         String separators = " \u00a0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007"

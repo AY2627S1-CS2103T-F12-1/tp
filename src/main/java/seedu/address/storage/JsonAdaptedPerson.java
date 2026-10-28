@@ -94,6 +94,7 @@ class JsonAdaptedPerson {
     /**
      * Converts this Jackson-friendly adapted person object into the model's {@code Person} object.
      * Normalises Unicode space separators and trims surrounding whitespace from text fields before validation.
+     * Remarks are only trimmed, preserving their internal spacing.
      *
      * @throws IllegalValueException if there were any data constraints violated in the adapted person.
      */
@@ -140,7 +141,7 @@ class JsonAdaptedPerson {
         final Email modelEmail = new Email(trimmedEmail);
 
         final Set<Label> modelLabels = new HashSet<>(personLabels);
-        final String trimmedRemark = StringUtil.normaliseSpaces(remark).trim();
+        final String trimmedRemark = StringUtil.trimSpaces(remark);
         if (!Remark.isValidRemark(trimmedRemark)) {
             throw new IllegalValueException(Remark.MESSAGE_CONSTRAINTS);
         }
