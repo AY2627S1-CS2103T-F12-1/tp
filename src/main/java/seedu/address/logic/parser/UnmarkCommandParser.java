@@ -1,18 +1,4 @@
 package seedu.address.logic.parser;
-
-<<<<<<< HEAD
-import static seedu.address.logic.parser.CliSyntax.PREFIX_DATE;
-import static seedu.address.logic.parser.CliSyntax.PREFIX_LABEL;
-import static seedu.address.logic.parser.CliSyntax.PREFIX_STUDENT_ID;
-
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-
-import seedu.address.commons.util.StringUtil;
-=======
->>>>>>> master
 import seedu.address.logic.commands.UnmarkCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 
