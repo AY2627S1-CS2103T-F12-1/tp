@@ -486,6 +486,9 @@ The attendance view replaces the student list:
 * A failed command leaves it open and unchanged.
 * Any other successful command, such as `list` or `undo`, returns to the student list.
 
+The narrowest supported window width is **450 logical pixels**. Long student names wrap in the attendance list, so the
+Present/Absent badge remains visible at that width.
+
 Examples:
 
 * `attendance d/2026-10-20 l/Tutorial 1`

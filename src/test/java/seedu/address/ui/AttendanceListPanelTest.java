@@ -17,6 +17,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import javafx.application.Platform;
+import javafx.geometry.Bounds;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -99,11 +100,46 @@ public class AttendanceListPanelTest {
         assertTrue(absentStatus.getStyleClass().contains("attendance_absent"));
     }
 
+    @Test
+    public void attendanceCard_longName_wrapsAndKeepsStatusVisible() throws Exception {
+        assumeTrue(isToolkitAvailable);
+        String longName = "Alexandra ".repeat(10).trim() + "A";
+        Person student = new PersonBuilder(ALICE).withName(longName).withLabels("Tutorial 1").build();
+
+        onFxThread(() -> {
+            // EP: an absent student with a maximum-length name at the minimum list width
+            // BVA: 100-character name and 320-pixel list width within the minimum 340-pixel list pane
+            double narrowNameHeight = assertBadgeVisible(student, 320);
+
+            // EP: the same student at a wide list width
+            double wideNameHeight = assertBadgeVisible(student, 1200);
+            assertTrue(narrowNameHeight > wideNameHeight);
+            return null;
+        });
+    }
+
+    private static double assertBadgeVisible(Person student, double width) {
+        AttendanceReport report = AttendanceReport.of(List.of(student), DATE, GROUP);
+        Parent root = layOut(new AttendanceListPanel(report).getRoot(), width);
+        ListView<?> list = (ListView<?>) root.lookup("#attendanceListView");
+        Label status = (Label) root.lookup("#status");
+        Label name = (Label) root.lookup("#name");
+        Bounds listBounds = list.localToScene(list.getBoundsInLocal());
+        Bounds statusBounds = status.localToScene(status.getBoundsInLocal());
+
+        assertTrue(statusBounds.getMaxX() <= listBounds.getMaxX());
+        return name.getHeight();
+    }
+
     /**
      * Places {@code root} in a scene and lays it out, so that its list creates cells for the visible rows.
      */
     private static Parent layOut(Parent root) {
-        new Scene(root, 400, 400);
+        return layOut(root, 400);
+    }
+
+    private static Parent layOut(Parent root, double width) {
+        new Scene(root, width, 400);
         root.applyCss();
         root.layout();
         return root;
