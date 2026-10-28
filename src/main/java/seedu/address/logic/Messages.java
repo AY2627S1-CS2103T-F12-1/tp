@@ -50,6 +50,9 @@ public class Messages {
                 .append(person.getEmail())
                 .append("; Labels: ");
         person.getLabels().forEach(builder::append);
+        if (!person.getRemark().value.isEmpty()) {
+            builder.append("; Remark: ").append(person.getRemark());
+        }
         return builder.toString();
     }
 

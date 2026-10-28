@@ -241,8 +241,9 @@ For a student named John Doe with label `Tutorial 1`, running `edit i/A0123456B 
 Edited student: John Doe; Student ID: A0123456B; Email: johndoe@example.com; Labels: [Tutorial 1]
 ```
 
-The feedback lists the updated name, Student ID, email, and labels. It does not include the remark; check the student
-card to see a changed remark. Multiple labels may be displayed in any order.
+The feedback lists the updated name, Student ID, email, and labels, followed by `; Remark: REMARK` when the student has
+a remark. For example, `edit i/A0123456B r/Needs help with recursion` reports
+`...; Labels: [Tutorial 1]; Remark: Needs help with recursion`. Multiple labels may be displayed in any order.
 
 #### Errors
 
