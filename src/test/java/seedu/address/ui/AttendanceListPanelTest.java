@@ -123,6 +123,7 @@ public class AttendanceListPanelTest {
         });
     }
 
+    @Test
     public void constructor_longGroupHeading_remainsReadableInSmallAndResizedWindows() throws Exception {
         assumeTrue(isToolkitAvailable);
         onFxThread(() -> {
@@ -169,7 +170,8 @@ public class AttendanceListPanelTest {
                                     + "; bottom was " + listBounds.getMaxY());
                 }
             }
-
+            return null;
+        });
     }
 
     private static double assertBadgeVisible(Person student, double width) {
