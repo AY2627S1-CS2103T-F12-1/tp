@@ -12,7 +12,7 @@
     <Insets top="5" right="15" bottom="5" left="15" />
   </padding>
   <!-- Keep long names from widening the list; the details column still grows to fill available space. -->
-  <VBox HBox.hgrow="ALWAYS" prefWidth="150" minHeight="60" alignment="CENTER_LEFT">
+  <VBox HBox.hgrow="ALWAYS" prefWidth="150" minHeight="60" minWidth="0" alignment="CENTER_LEFT">
     <HBox spacing="0.5" alignment="TOP_LEFT">
       <Label fx:id="id" styleClass="cell_big_label">
         <minWidth>

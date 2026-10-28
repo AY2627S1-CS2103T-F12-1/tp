@@ -184,7 +184,7 @@ If at least one student exists, the expected successful output is:
 Listed all students.
 ```
 
-If there are no stored students, the displayed list remains empty and the command reports:
+If loading succeeded and there are no stored students, the displayed list remains empty and the command reports:
 
 ```text
 No students found.
@@ -202,6 +202,7 @@ are case-sensitive.
 | Parameter-like argument | `list n/Samuel` or `list n/` | `Invalid command format!` followed by `Usage: list` on the next line |
 | Misspelled command | `lisst` | `Unknown command.` |
 | Incorrect capitalisation | `List` or `LIST` | `Unknown command.` |
+| Student data failed to load | `list` | `Student data is unavailable because loading failed. Fix the data file and restart.` |
 
 ### Editing a student: `edit`
 
@@ -286,7 +287,8 @@ or `find e/KEYWORD [MORE_KEYWORDS]` or `find r/KEYWORD [MORE_KEYWORDS]` or `find
 * Label names follow the rules under `add`: 1–60 Unicode code points, at least one letter or digit, and only the
   permitted characters. Surrounding whitespace is ignored; internal spacing is preserved. Slashes and control
   characters are rejected.
-* Reports `N students listed.`, or `1 student listed.` for one match. If no students match, the displayed list is cleared and reports `0 students listed.`
+* Reports `N students listed.`, or `1 student listed.` for one match. If loading succeeded but no students match,
+  the displayed list is cleared and reports `0 students listed.`
 * Student records and the saved data file are unchanged. Use `list` to show all students again.
 
 Examples:
@@ -317,10 +319,11 @@ The former `filter` command has been replaced by `find l/LABEL_NAME`.
 | Empty search parameter | `Parameter l/ cannot be empty.` (or the supplied prefix) |
 | Invalid label | `Label names should be 1 to 60 characters long, contain at least one letter or digit, and only contain letters, digits, spaces, hyphens, underscores, apostrophes, parentheses, and periods.` |
 | Using the removed command, such as `filter l/Tutorial 1` | `Unknown command.` |
+| Student data failed to load | `Student data is unavailable because loading failed. Fix the data file and restart.` |
 
 Errors are checked in the order of words before the first prefix, unknown prefixes, repeated prefixes, missing
-prefixes, mixed search fields, empty values, then label validation. Failed commands preserve the displayed list,
-student records, and saved file.
+prefixes, mixed search fields, empty values, then label validation. For a valid search, data availability is checked
+before searching. Failed commands preserve the displayed list, student records, and saved file.
 
 ### Deleting a student: `delete`
 
@@ -483,6 +486,9 @@ The attendance view replaces the student list:
 * A failed command leaves it open and unchanged.
 * Any other successful command, such as `list` or `undo`, returns to the student list.
 
+The narrowest supported window width is **450 logical pixels**. Long student names wrap in the attendance list, so the
+Present/Absent badge remains visible at that width.
+
 Examples:
 
 * `attendance d/2026-10-20 l/Tutorial 1`
@@ -589,10 +595,10 @@ and only the first problem found is shown.
 
 If loading fails, TeachAssist starts with an empty student list and leaves the data file untouched:
 
-* Commands that change student records (`add`, `edit`, `delete`, `mark`, `unmark`, `clear`, and `undo`) are blocked with
+* Commands that change student records (`add`, `edit`, `delete`, `mark`, `unmark`, `clear`, and `undo`), as well as
+  `list` and `find`, are blocked with
   `Student data is unavailable because loading failed. Fix the data file and restart.`
-* Commands that do not change student records, such as `list`, `find`, `attendance`, `help`, and `exit`, remain
-  available.
+* `attendance`, `help`, and `exit` remain available.
 
 To recover, close TeachAssist, fix or restore the data file, and restart. Deleting the data file makes TeachAssist start
 with an empty student list.

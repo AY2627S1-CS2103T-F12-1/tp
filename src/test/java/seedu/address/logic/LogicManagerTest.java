@@ -499,18 +499,40 @@ public class LogicManagerTest {
     }
 
     @Test
-    public void execute_loadingFailed_blocksModificationsAndPreservesCorruptFile() throws Exception {
-        // EP: data load failure blocks modifying commands
+    public void execute_loadingFailed_blocksDataCommandsAndPreservesCorruptFile() throws Exception {
+        // EP: data load failure blocks modifying commands and student-list queries
         Files.writeString(storage.getAddressBookFilePath(), "invalid student data");
         assertThrows(DataLoadingException.class, storage::readAddressBook);
         logic = new LogicManager(model, storage, false, "");
         for (String command : List.of("add n/Samuel i/A0123456B e/sam@example.com", "clear", "delete i/B1234567C",
-                "edit i/A0123456B n/Samuel", "unmark i/A0123456B d/2026-10-20 l/Tutorial 1")) {
+                "edit i/A0123456B n/Samuel", "unmark i/A0123456B d/2026-10-20 l/Tutorial 1",
+                "list", "find n/Alice", "find i/A1234567B", "find e/alice@example.com", "find r/recursion",
+                "find l/Tutorial 1")) {
             assertCommandException(command, LogicManager.MESSAGE_DATA_UNAVAILABLE);
         }
-        logic.execute("list");
+
+        // EP: invalid query syntax is still reported before the loading-failure guard
+        assertParseException("find p/Alice", "Unknown parameter: p/.");
+
+        // EP: attendance, help, and exit remain available without changing the corrupt file
         logic.execute("attendance d/2026-10-20 l/Tutorial 1");
+        logic.execute("help");
+        logic.execute("exit");
         assertEquals("invalid student data", Files.readString(storage.getAddressBookFilePath()));
+    }
+
+    @Test
+    public void execute_loadedEmptyAddressBook_reportsGenuineEmptyListAndFindResults() throws Exception {
+        // EP: successfully loaded empty data reports empty results, rather than a loading failure
+        // BVA: zero stored students
+        storage.saveAddressBook(model.getAddressBook());
+        String originalFile = Files.readString(storage.getAddressBookFilePath());
+
+        assertEquals(ListCommand.MESSAGE_NO_STUDENTS_FOUND, logic.execute("list").getFeedbackToUser());
+        assertEquals(String.format(MESSAGE_PERSONS_LISTED_OVERVIEW, 0),
+                logic.execute("find n/Alice").getFeedbackToUser());
+        assertEquals(new AddressBook(), model.getAddressBook());
+        assertEquals(originalFile, Files.readString(storage.getAddressBookFilePath()));
     }
 
     @Test
