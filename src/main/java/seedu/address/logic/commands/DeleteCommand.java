@@ -2,8 +2,9 @@ package seedu.address.logic.commands;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.Optional;
+import java.util.logging.Logger;
 
+import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
@@ -25,6 +26,7 @@ public class DeleteCommand extends Command {
     public static final String MESSAGE_INVALID_FORMAT = "Invalid command format. Usage: delete i/STUDENT_ID";
     public static final String MESSAGE_DELETE_PERSON_SUCCESS = "Deleted student %1$s: %2$s.";
     public static final String MESSAGE_STUDENT_NOT_FOUND = "Student with ID %s is not in the records.";
+    private static final Logger logger = LogsCenter.getLogger(DeleteCommand.class);
 
     private final StudentId targetStudentId;
 
@@ -52,20 +54,24 @@ public class DeleteCommand extends Command {
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
-        Optional<Person> matchingPerson = model.getAddressBook()
-                .getPersonList()
-                .stream()
-                .filter(person -> person.getStudentId().equals(targetStudentId))
-                .findFirst();
-        if (matchingPerson.isEmpty()) {
-            throw new CommandException(String.format(MESSAGE_STUDENT_NOT_FOUND, targetStudentId));
-        }
-
-        Person targetStudent = matchingPerson.get();
+        Person targetStudent = findStudent(model);
 
         model.deletePerson(targetStudent);
+        assert !model.hasPerson(targetStudent);
+        logger.info("Deleted student ID " + targetStudentId + ".");
         return new CommandResult(String.format(MESSAGE_DELETE_PERSON_SUCCESS,
                 targetStudent.getStudentId(), targetStudent.getName()));
+    }
+
+    private Person findStudent(Model model) throws CommandException {
+        assert model != null;
+        return model.getAddressBook().getPersonList().stream()
+                .filter(person -> person.getStudentId().equals(targetStudentId))
+                .findFirst()
+                .orElseThrow(() -> {
+                    logger.warning("Delete rejected: student ID " + targetStudentId + " not found.");
+                    return new CommandException(String.format(MESSAGE_STUDENT_NOT_FOUND, targetStudentId));
+                });
     }
 
     @Override

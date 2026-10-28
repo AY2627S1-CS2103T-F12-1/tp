@@ -35,6 +35,7 @@ public class UnmarkCommandTest {
 
     @Test
     public void execute_hiddenStudent_removesOnlyMatchingAttendanceAndPreservesFilter() {
+        // EP: hidden student with the requested record; other dates and groups remain unchanged
         AttendanceRecord differentDate = new AttendanceRecord(DATE.plusDays(1), GROUP);
         AttendanceRecord differentGroup = new AttendanceRecord(DATE, new Label("Tutorial 2"));
         Person student = new PersonBuilder(ALICE).withLabels("Tutorial 1", "Tutorial 2")
@@ -53,6 +54,7 @@ public class UnmarkCommandTest {
 
     @Test
     public void execute_removedGroupLabel_removesHistoricalAttendance() {
+        // EP: historical attendance remains removable after current group membership is removed
         Person student = new PersonBuilder(ALICE).withLabels().withAttendance(RECORD).build();
         model.setPerson(ALICE, student);
         Model expected = new ModelManager(model.getAddressBook(), new UserPrefs());
@@ -64,12 +66,14 @@ public class UnmarkCommandTest {
 
     @Test
     public void execute_missingStudent_preservesRecords() {
+        // EP: unknown student ID leaves the address book and active filter unchanged
         assertCommandFailure(new UnmarkCommand(new StudentId("Z9999999Z"), DATE, GROUP), model,
                 "Student with ID Z9999999Z is not in the records.");
     }
 
     @Test
     public void execute_noAttendance_preservesRecords() {
+        // EP: existing student has no attendance records; rejected removal leaves data unchanged
         Person student = new PersonBuilder(ALICE).withLabels(GROUP.labelName).withAttendance().build();
         model.setPerson(ALICE, student);
 
@@ -79,6 +83,7 @@ public class UnmarkCommandTest {
 
     @Test
     public void execute_wrongDateOrGroup_preservesRecords() {
+        // EP: record exists for only a different date or group; requested pair is absent
         Person student = new PersonBuilder(ALICE).withAttendance(RECORD).build();
         model.setPerson(ALICE, student);
 
@@ -90,6 +95,7 @@ public class UnmarkCommandTest {
 
     @Test
     public void execute_markThenUnmark_restoresOriginalStudent() throws Exception {
+        // EP: mark followed by unmark of the same date/group restores the original state
         Person student = new PersonBuilder(ALICE).withLabels(GROUP.labelName).build();
         model.setPerson(ALICE, student);
         Model expected = new ModelManager(model.getAddressBook(), new UserPrefs());
@@ -117,6 +123,7 @@ public class UnmarkCommandTest {
 
     @Test
     public void constructor_nullField_throwsNullPointerException() {
+        // EP: each required command field is absent
         assertThrows(NullPointerException.class, () -> new UnmarkCommand(null, DATE, GROUP));
         assertThrows(NullPointerException.class, () -> new UnmarkCommand(ALICE.getStudentId(), null, GROUP));
         assertThrows(NullPointerException.class, () -> new UnmarkCommand(ALICE.getStudentId(), DATE, null));

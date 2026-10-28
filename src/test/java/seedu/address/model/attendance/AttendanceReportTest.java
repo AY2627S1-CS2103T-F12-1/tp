@@ -27,6 +27,7 @@ public class AttendanceReportTest {
 
     @Test
     public void of_currentMembers_reportsStatusInListOrder() {
+        // EP: present and absent current members are included in supplied list order; non-members are excluded
         Person present = new PersonBuilder(CARL).withLabels("tutorial 1")
                 .withAttendance(new AttendanceRecord(DATE, GROUP)).build();
         Person absent = new PersonBuilder(ALICE).withLabels("Tutorial 1", "Tutorial 2")
@@ -48,6 +49,7 @@ public class AttendanceReportTest {
 
     @Test
     public void of_multipleGroupsOnOneDate_reportsEachGroupSeparately() {
+        // EP: attendance for one group on a date does not make a member present in another group
         Person student = new PersonBuilder(ALICE).withLabels("Tutorial 1", "Tutorial 2")
                 .withAttendance(new AttendanceRecord(DATE, OTHER_GROUP)).build();
 
@@ -59,6 +61,7 @@ public class AttendanceReportTest {
 
     @Test
     public void of_nobodyMarked_reportsAllAbsent() {
+        // EP: current members with no matching records are all absent
         Person first = new PersonBuilder(ALICE).withLabels("Tutorial 1").build();
         Person second = new PersonBuilder(DANIEL).withLabels("Tutorial 1").build();
 
@@ -70,6 +73,7 @@ public class AttendanceReportTest {
 
     @Test
     public void of_recordWithoutCurrentLabel_excludesStudent() {
+        // EP: former group member with a historical record is excluded from the current-members report
         Person formerMember = new PersonBuilder(ALICE).withAttendance(new AttendanceRecord(DATE, GROUP)).build();
 
         AttendanceReport report = AttendanceReport.of(List.of(formerMember, BENSON), DATE, GROUP);
@@ -81,6 +85,7 @@ public class AttendanceReportTest {
 
     @Test
     public void getEntries_modification_throwsUnsupportedOperationException() {
+        // EP: report entries are immutable to callers
         Person member = new PersonBuilder(ALICE).withLabels("Tutorial 1").build();
         AttendanceReport report = AttendanceReport.of(List.of(member), DATE, GROUP);
         assertThrows(UnsupportedOperationException.class, () -> report.getEntries().clear());
@@ -88,6 +93,7 @@ public class AttendanceReportTest {
 
     @Test
     public void of_nullArgument_throwsNullPointerException() {
+        // EP: source students, date, group, or entry student is absent
         assertThrows(NullPointerException.class, () -> AttendanceReport.of(null, DATE, GROUP));
         assertThrows(NullPointerException.class, () -> AttendanceReport.of(List.of(), null, GROUP));
         assertThrows(NullPointerException.class, () -> AttendanceReport.of(List.of(), DATE, null));

@@ -65,4 +65,33 @@ public class LabelTest {
         assertTrue(Label.isValidLabelName("Tutorial (Monday)"));
         assertTrue(Label.isValidLabelName("Tutorial 1.2"));
     }
+
+    @Test
+    public void equalsIgnoreCase_null_throwsNullPointerException() {
+        Label label = new Label("Tutorial 1");
+        assertThrows(NullPointerException.class, () -> label.equalsIgnoreCase((Label) null));
+        assertThrows(NullPointerException.class, () -> label.equalsIgnoreCase((String) null));
+    }
+
+    @Test
+    public void equalsIgnoreCase_matchingCaseVariations_returnsTrue() {
+        Label label = new Label("Tutorial 1");
+
+        // EP: identical string
+        assertTrue(label.equalsIgnoreCase(new Label("Tutorial 1")));
+        assertTrue(label.equalsIgnoreCase("Tutorial 1"));
+
+        // EP: different casing
+        assertTrue(label.equalsIgnoreCase(new Label("tutorial 1")));
+        assertTrue(label.equalsIgnoreCase("TUTORIAL 1"));
+    }
+
+    @Test
+    public void equalsIgnoreCase_differentLabels_returnsFalse() {
+        Label label = new Label("Tutorial 1");
+
+        // EP: different label
+        assertFalse(label.equalsIgnoreCase(new Label("Tutorial 2")));
+        assertFalse(label.equalsIgnoreCase("Tutorial 2"));
+    }
 }

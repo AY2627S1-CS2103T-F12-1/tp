@@ -14,6 +14,7 @@ public class MarkCommandParser implements Parser<MarkCommand> {
      * @param args The non-null command arguments.
      * @return A command ready to mark attendance.
      * @throws ParseException if the command or a parameter is invalid.
+     * @throws NullPointerException if {@code args} is null.
      */
     @Override
     public MarkCommand parse(String args) throws ParseException {

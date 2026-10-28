@@ -59,6 +59,7 @@ public class LogicManagerTest {
 
     @Test
     public void execute_unmark_persistsRemovalAndPreservesFilter() throws Exception {
+        // EP: successful unmark of a hidden student persists only the matching removal and keeps the active filter
         AttendanceRecord record = new AttendanceRecord(LocalDate.parse("2026-10-20"), new Label("Tutorial 1"));
         AttendanceRecord retained = new AttendanceRecord(LocalDate.parse("2026-10-21"), new Label("Tutorial 1"));
         Person student = new PersonBuilder(ALICE).withLabels().withAttendance(record, retained).build();
@@ -194,6 +195,7 @@ public class LogicManagerTest {
 
     @Test
     public void execute_unmarkFailure_preservesSavedDataAndFilter() throws Exception {
+        // EP: parse and command failures preserve the live model, active filter, and saved file
         AttendanceRecord record = new AttendanceRecord(LocalDate.parse("2026-10-20"), new Label("Tutorial 1"));
         Person student = new PersonBuilder(ALICE).withAttendance(record).build();
         model.addPerson(student);
@@ -213,6 +215,7 @@ public class LogicManagerTest {
 
     @Test
     public void execute_unmarkSaveFailure_keepsLiveModelFileAndFilter() throws Exception {
+        // EP: persistence failure after a valid unmark leaves the live model, filter, and saved file unchanged
         AttendanceRecord record = new AttendanceRecord(LocalDate.parse("2026-10-20"), new Label("Tutorial 1"));
         Person student = new PersonBuilder(ALICE).withAttendance(record).build();
         model.addPerson(student);
@@ -251,6 +254,7 @@ public class LogicManagerTest {
 
     @Test
     public void execute_mark_persistsAndReloadsAttendance() throws Exception {
+        // EP: successful mark of a hidden student persists the record and preserves the active filter
         Person student = new PersonBuilder(ALICE).withLabels("Tutorial 1").build();
         model.addPerson(student);
         logic.execute("find n/Benson");
@@ -268,6 +272,7 @@ public class LogicManagerTest {
 
     @Test
     public void execute_attendance_showsReportAndRefreshesAfterMark() throws Exception {
+        // EP: open attendance report refreshes after a matching mark, not an unrelated date; other commands close it
         Person alice = new PersonBuilder(ALICE).withLabels("Tutorial 1").build();
         Person benson = new PersonBuilder(BENSON).withLabels("Tutorial 1").build();
         model.addPerson(alice);
@@ -305,6 +310,7 @@ public class LogicManagerTest {
 
     @Test
     public void execute_unmarkAndUndo_updateAttendanceView() throws Exception {
+        // EP: open attendance report refreshes after unmark; undo closes the report
         model.addPerson(new PersonBuilder(ALICE).withLabels("Tutorial 1").build());
         logic.execute("mark i/A1234567B d/2026-10-20 l/Tutorial 1");
         assertEquals(1, logic.execute("attendance d/2026-10-20 l/Tutorial 1")
@@ -318,6 +324,7 @@ public class LogicManagerTest {
 
     @Test
     public void execute_attendanceAfterRestart_showsSavedAttendance() throws Exception {
+        // EP: persisted records survive restart and reports distinguish requested groups and no-member groups
         model.addPerson(new PersonBuilder(ALICE).withLabels("Tutorial 1").build());
         model.addPerson(new PersonBuilder(BENSON).withLabels("Tutorial 1", "Tutorial 2").build());
         logic.execute("mark i/A1234567B d/2026-10-20 l/Tutorial 1");
@@ -336,6 +343,7 @@ public class LogicManagerTest {
 
     @Test
     public void execute_markFailure_preservesSavedData() throws Exception {
+        // EP: parse and command failures preserve the live model and saved file
         Person student = new PersonBuilder(ALICE).withLabels("Tutorial 1").build();
         model.addPerson(student);
         storage.saveAddressBook(model.getAddressBook());
@@ -350,6 +358,7 @@ public class LogicManagerTest {
 
     @Test
     public void execute_markSaveFailure_keepsLiveModelAndFile() throws Exception {
+        // EP: persistence failure after a valid mark leaves the live model and saved file unchanged
         Person student = new PersonBuilder(ALICE).withLabels("Tutorial 1").build();
         model.addPerson(student);
         storage.saveAddressBook(model.getAddressBook());
@@ -403,6 +412,22 @@ public class LogicManagerTest {
         JsonUserPrefsStorage userPrefsStorage = new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"));
         storage = new StorageManager(addressBookStorage, userPrefsStorage);
         logic = new LogicManager(model, storage);
+    }
+
+    @Test
+    public void constructor_nullArguments_throwsNullPointerException() {
+        // EP: null model
+        assertThrows(NullPointerException.class, () -> new LogicManager(null, storage));
+        // EP: null storage
+        assertThrows(NullPointerException.class, () -> new LogicManager(model, null));
+        // EP: null startup message
+        assertThrows(NullPointerException.class, () -> new LogicManager(model, storage, true, null));
+    }
+
+    @Test
+    public void execute_nullCommandText_throwsNullPointerException() {
+        // EP: null commandText
+        assertThrows(NullPointerException.class, () -> logic.execute(null));
     }
 
     @Test
