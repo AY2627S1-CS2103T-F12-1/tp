@@ -1,6 +1,7 @@
 package seedu.address.logic;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static seedu.address.logic.Messages.MESSAGE_PERSONS_LISTED_OVERVIEW;
 import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 import static seedu.address.logic.commands.CommandTestUtil.EMAIL_DESC_AMY;
@@ -9,6 +10,7 @@ import static seedu.address.logic.commands.CommandTestUtil.STUDENT_ID_DESC_AMY;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BENSON;
+import static seedu.address.testutil.TypicalPersons.CARL;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
@@ -17,6 +19,7 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -73,6 +76,25 @@ public class LogicManagerTest {
         Person expectedStudent = new PersonBuilder(student).withAttendance(retained).build();
         assertEquals(List.of(expectedStudent, BENSON), model.getAddressBook().getPersonList());
         assertEquals(model.getAddressBook(), storage.readAddressBook().orElseThrow());
+        assertEquals(List.of(BENSON), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_filterPreservingCommands_keepSameFilterPredicate() throws Exception {
+        // EP: repeated mark/unmark/delete under a find filter must not wrap the predicate in extra layers (#206)
+        model.addPerson(new PersonBuilder(ALICE).withLabels("Tutorial 1").build());
+        model.addPerson(BENSON);
+        model.addPerson(CARL);
+        logic.execute("find n/Benson");
+        Predicate<? super Person> findPredicate = model.getFilteredPersonListPredicate();
+
+        for (int i = 0; i < 5; i++) {
+            logic.execute("mark i/A1234567B d/2026-10-20 l/Tutorial 1");
+            logic.execute("unmark i/A1234567B d/2026-10-20 l/Tutorial 1");
+        }
+        logic.execute("delete i/" + CARL.getStudentId());
+
+        assertSame(findPredicate, model.getFilteredPersonListPredicate());
         assertEquals(List.of(BENSON), model.getFilteredPersonList());
     }
 

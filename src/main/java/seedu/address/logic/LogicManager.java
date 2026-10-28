@@ -125,12 +125,12 @@ public class LogicManager implements Logic {
         requireNonNull(command);
         AddressBook previousAddressBook = new AddressBook(model.getAddressBook());
         Model pendingModel = new ModelManager(model.getAddressBook(), model.getUserPrefs());
-        pendingModel.updateFilteredPersonList(model.getFilteredPersonListPredicate()::test);
+        pendingModel.updateFilteredPersonList(model.getFilteredPersonListPredicate());
         CommandResult result = command.execute(pendingModel);
         saveStudentData(pendingModel.getAddressBook());
         recordUndoSnapshot(previousAddressBook);
         model.setAddressBook(pendingModel.getAddressBook());
-        model.updateFilteredPersonList(pendingModel.getFilteredPersonListPredicate()::test);
+        model.updateFilteredPersonList(pendingModel.getFilteredPersonListPredicate());
         return result;
     }
 
