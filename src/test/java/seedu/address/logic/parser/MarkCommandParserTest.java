@@ -59,6 +59,8 @@ public class MarkCommandParserTest {
                 MarkCommand.MESSAGE_INVALID_FORMAT);
         assertParseFailure(parser, "i/A0123456B d/2026-10-20 l/Tutorial 1\nextra",
                 MarkCommand.MESSAGE_INVALID_FORMAT);
+        assertParseFailure(parser, "i/A0123456B d/2026-10-20 l/Tutorial 1\rextra",
+                MarkCommand.MESSAGE_INVALID_FORMAT);
     }
 
     @Test
