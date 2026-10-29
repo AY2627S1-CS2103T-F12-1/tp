@@ -93,9 +93,16 @@ public class JsonUtil {
      * Converts a given string representation of JSON data to an instance of a class
      * @param <T> The generic type to create an instance of
      * @return The instance of T with the specified values in the JSON string
+     * @throws IOException if the input cannot be deserialized or contains trailing content.
      */
     public static <T> T fromJsonString(String json, Class<T> instanceClass) throws IOException {
-        return objectMapper.readValue(json, instanceClass);
+        try (JsonParser parser = objectMapper.getFactory().createParser(json)) {
+            T result = objectMapper.readValue(parser, instanceClass);
+            if (parser.nextToken() != null) {
+                throw JsonMappingException.from(parser, "JSON document must contain only one root value.");
+            }
+            return result;
+        }
     }
 
     /**
