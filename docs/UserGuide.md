@@ -223,7 +223,8 @@ Shows present and absent students for a group and date, with totals.
 * Students who have lost the label are excluded, but their attendance is kept. No members produces zero totals.
 * The attendance view replaces the student list. Successful `mark`/`unmark` commands refresh it; other successful
   commands return to the student list. Failed commands leave it unchanged.
-* This command changes no data and remains available after a loading failure.
+* This command changes no data. It is blocked after a loading failure; fix or restore the data file and restart.
+  A missing file or a successfully loaded empty file still permits an attendance report with zero totals.
 
 **Example:** `attendance d/2026-10-20 l/Tutorial 1`
 
@@ -266,7 +267,7 @@ TeachAssist loads `[JAR file location]/data/addressbook.json` at startup and rep
 A missing file starts an empty list. A successful load reports how many students were loaded.
 
 If loading fails, the app opens with an empty list and **preserves the file**. `add`, `edit`, `delete`, `mark`,
-`unmark`, `clear`, `undo`, `list`, and `find` are blocked. `attendance`, `help`, and `exit` remain available.
+`unmark`, `clear`, `undo`, `list`, `find`, and `attendance` are blocked. `help` and `exit` remain available.
 Close the app, fix or restore the file, then restart. Deleting the file starts a fresh empty list.
 
 ### Saving the data

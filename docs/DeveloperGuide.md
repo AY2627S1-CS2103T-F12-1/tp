@@ -331,9 +331,10 @@ Read-only commands such as `find`, `list`, `help`, and `exit` execute on the liv
 #### Startup and feedback
 
 `MainApp` starts empty when the data file is missing. If loading fails, it creates an empty model and configures
-`LogicManager` to block modifying commands until the file is fixed and the application is restarted.
+`LogicManager` to block modifying commands, `list`, `find`, and `attendance` until the file is fixed and the application
+is restarted.
 The error is `Student data is unavailable because loading failed. Fix the data file and restart.`
-This prevents an empty model from overwriting unreadable or invalid records. Read-only commands remain available.
+This prevents an empty model from overwriting unreadable or invalid records. `help` and `exit` remain available.
 
 Successful adds display `Added student ID: NAME.`, followed by ` Remark: TEXT` when the remark is non-empty,
 and the total student count on the next line. The count uses the complete record list.
@@ -536,8 +537,7 @@ shows the save-success and save-failure paths.
 * `MainAppTest` loads a data file without `attendance`, marks students, restarts through the normal startup path,
   and checks the saved attendance and duplicate-mark check.
 * `AttendanceListPanelTest` lays out the panel and checks its title, totals, members, and Present and Absent badges.
-  It is skipped where JavaFX cannot start. The Linux CI job, which uploads coverage, runs under `xvfb-run` so that
-  JavaFX tests have a virtual display.
+  The Linux CI job, which uploads coverage, runs under `xvfb-run` so that JavaFX tests have a virtual display.
 
 ### Loading student data at startup
 
@@ -574,15 +574,17 @@ each outcome.
 
 <puml src="diagrams/LoadSequenceDiagram.puml" alt="Loading student data at startup" />
 
-#### Blocking modifications after a failed load
+#### Blocking student-data commands after a failed load
 
 When loading fails, `MainApp` starts with an empty `AddressBook` and passes `isStudentDataAvailable = false` to
 `LogicManager`. `LogicManager#execute` parses each command first, so malformed commands still receive their usual
-error messages. It then rejects commands whose `Command#isModifyingData` returns true, plus `list` and `find`, with
+error messages. It then rejects modifying commands (including `undo`), `list`, `find`, and `attendance` with
 `Student data is unavailable because loading failed. Fix the data file and restart.`
 
 This prevents the empty in-memory list from being saved over the user's data file, which may still be recoverable.
-`attendance`, `help`, and `exit` remain available. Restarting is the only way to retry loading.
+`list`, `find`, and `attendance` are blocked because the empty fallback model is not a successfully loaded dataset.
+`help` and `exit` remain available. A missing file or a successfully loaded empty file still permits student-data
+commands and genuine zero-total attendance reports. After fixing the file, restart to retry loading.
 
 Saving is described in [Saving before publishing changes](#saving-before-publishing-changes).
 
@@ -590,7 +592,7 @@ Saving is described in [Saving before publishing changes](#saving-before-publish
 
 **Aspect: What to do when the data file cannot be loaded**
 
-* **Alternative 1 (current choice):** Start with an empty list, keep the file, and block modifying commands plus `list` and `find`.
+* **Alternative 1 (current choice):** Start with an empty list, keep the file, and block commands that change or query student data.
   * Pros: The user's data file is never overwritten, and the user sees why loading failed.
   * Cons: The app cannot be used to change records until the file is fixed.
 * **Alternative 2:** Start with an empty list and allow modifying commands, as in AddressBook-Level3.
@@ -600,7 +602,8 @@ Saving is described in [Saving before publishing changes](#saving-before-publish
 #### Verification
 
 `MainAppTest` covers a missing file, files with zero, one, and several students, a corrupted file, and duplicate Student
-IDs. It checks that modifying commands are blocked and the file is unchanged after a failed load.
+IDs. It checks that modifying commands and student-data queries are blocked and the file is unchanged after a failed
+load. Missing files and successfully loaded empty files remain usable.
 `JsonAddressBookStorageTest` covers unreadable files, invalid JSON, invalid values, and duplicate Student IDs.
 
 ### Undoing data changes
@@ -1169,7 +1172,7 @@ the current view, and the contents of `data/addressbook.json` are unchanged.
 | 6 | `undo` | Both complete records are restored and visible. |
 | 7 | `undo 1` | `Invalid command format!` followed by `Usage: undo`; records are unchanged. |
 | 8 | Run `undo` until the list is empty, then once more | The original two adds are reversed; the final response is `Nothing to undo.` |
-| 9 | `clear`, then `undo` | Clearing an empty list succeeds without creating a snapshot; undo reports `Nothing to undo.` and the list remains empty. |
+| 9 | `clear`, then `undo` | Clearing the empty list succeeds without adding a snapshot; undo reports `Nothing to undo.` because step 8 exhausted the history. The list remains empty. |
 
 The automated tests in `LogicManagerTest` cover eviction at the 100-snapshot history limit and failed-save preservation.
 
@@ -1189,8 +1192,8 @@ failed-replacement scenario, which deliberately introduces an obstruction while 
 
 | Case | Preparation and action | Expected result |
 |------|------------------------|-----------------|
-| Invalid JSON | Back up `data/addressbook.json`, replace its contents with `{`, then launch. Run `list`, then `clear`. | Startup reports corrupted or invalid data. `list` and `clear` both report that student data is unavailable. The invalid file remains untouched. Restore the backup and restart to recover both students. |
-| Duplicate ID | Duplicate a complete student object in the JSON `persons` array, then launch. | Startup reports the duplicate Student ID; modifying commands are blocked. Restore the backup and restart. |
+| Invalid JSON | Back up `data/addressbook.json`, replace its contents with `{`, then launch. Run `list`, `find n/Alex`, `attendance d/2026-10-20 l/Tutorial 1`, then `clear`. | Startup reports corrupted or invalid data. Each command reports `Student data is unavailable because loading failed. Fix the data file and restart.`; no empty-list result or attendance report is shown. The invalid file remains untouched. Restore the backup and restart to recover both students. |
+| Duplicate ID | Duplicate a complete student object in the JSON `persons` array, then launch. | Startup reports the duplicate Student ID; modifying commands, `list`, `find`, and `attendance` are blocked. Restore the backup and restart. |
 | Cannot create data folder | In a fresh test folder, create a regular file named `data` beside the JAR. Launch and try a valid add. | `Unable to create data storage location.`; no student is added. Close the app, remove the test obstruction, and restart before retrying. |
 | Failed replacement | In a baseline folder, launch and run `find n/Beth`. While the app remains open, rename `data/addressbook.json` to `addressbook.backup.json` in the same folder. Create a non-empty directory named `addressbook.json` in its place, then run `delete i/A0123456B`. | `Unable to save student data.`; Beth remains the only visible student. `list` still shows both students. The backup file is unchanged. Close the app, remove the test directory, restore the backup filename, and restart. |
 
@@ -1442,7 +1445,7 @@ Validation order: unknown prefixes, preamble, repeated prefixes, missing/empty v
 Repeated and missing/empty checks use `i/`, `d/`, `l/` order for mark/unmark and `d/`, `l/` for attendance.
 Each required prefix is checked for presence and a non-empty value before moving to the next. Fields are validated in
 Student ID, date, and group order (date and group for attendance). The startup data-availability check follows parsing
-for mark/unmark. `attendance` remains available after a failed load and does not save data.
+for `mark`, `unmark`, and `attendance`; all three are blocked after a failed load. `attendance` does not save data.
 
 #### List, clear, undo, help, and exit errors
 
@@ -1462,14 +1465,14 @@ preserves the current student filter, and closes any attendance view. It does no
 | File cannot be read, e.g., permission denied | `Unable to load student data.` | Close the app, restore read access or a readable backup, and restart. |
 | Malformed JSON, extra root values/trailing garbage, `null` root, wrong structure, or invalid record | `Unable to load student data. The data file may be corrupted or invalid.` | Close the app, fix or restore the file, and restart. |
 | Duplicate Student ID after normalization | `Unable to load student data: duplicate Student ID A0123456B detected.` | Give each student a unique ID, then restart. |
-| Valid modifying command, `list`, or `find` after startup loading failed | `Student data is unavailable because loading failed. Fix the data file and restart.` | Fix or restore the data file with the app closed, then restart. |
+| Valid modifying command, `list`, `find`, or `attendance` after startup loading failed | `Student data is unavailable because loading failed. Fix the data file and restart.` | Fix or restore the data file with the app closed, then restart. |
 
 The entire JSON document is deserialized before model validation. `JsonUtil#fromJsonString` uses a Jackson 2.7 parser
 and explicitly checks `nextToken()` after binding the root value; additional tokens or invalid trailing content fail
 loading. Exactly one student-data object is accepted, with optional surrounding JSON whitespace (space, tab, carriage
 return, line feed). A `null` root is rejected. JSON syntax whitespace is distinct from Unicode padding inside strings.
 After deserialization, model conversion checks students in file order, stopping at the first failure. No partial
-student list is published. On failure the file is preserved; `attendance`, `help`, and `exit` remain available.
+student list is published. On failure the file is preserved; `help` and `exit` remain available.
 
 Each student requires valid `name`, `studentId`, and `email` values. Missing/null `remark` becomes empty text;
 missing/null `labels` and `attendance` become empty collections. Legacy `tags` and other unknown properties are ignored
