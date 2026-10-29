@@ -31,7 +31,7 @@ import seedu.address.ui.UiManager;
  */
 public class MainApp extends Application {
 
-    public static final String VERSION = "V1.4";
+    public static final String VERSION = "V1.5";
     public static final String MESSAGE_STUDENTS_LOADED = "%1$d students loaded.";
     public static final String MESSAGE_ONE_STUDENT_LOADED = "1 student loaded.";
     public static final String MESSAGE_NO_EXISTING_DATA =

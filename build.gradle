@@ -75,7 +75,7 @@ dependencies {
 }
 
 shadowJar {
-    archiveFileName = 'teach-assist-v1.4.jar'
+    archiveFileName = 'teach-assist-v1.5.jar'
 }
 
 run {
