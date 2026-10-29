@@ -230,6 +230,23 @@ public class JsonAddressBookStorageTest {
     }
 
     @Test
+    public void readAddressBook_trailingContent_throwsInvalidFileMessageAndPreservesFile() throws Exception {
+        Path file = testFolder.resolve("trailingContent.json");
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(file);
+        storage.saveAddressBook(getTypicalAddressBook());
+        String validJson = Files.readString(file);
+
+        for (String suffix : new String[] {" garbage", " {\"persons\": []}"}) {
+            String contents = validJson + suffix;
+            Files.writeString(file, contents);
+
+            assertThrows(DataLoadingException.class, JsonAddressBookStorage.MESSAGE_INVALID_FILE, () ->
+                    storage.readAddressBook());
+            assertEquals(contents, Files.readString(file));
+        }
+    }
+
+    @Test
     public void readAddressBook_wrongJsonStructure_throwsInvalidFileMessage() throws Exception {
         Path file = testFolder.resolve("wrongStructure.json");
         Files.writeString(file, "{ \"persons\": \"not a list\" }");
