@@ -622,15 +622,15 @@ public class LogicManagerTest {
         for (String command : List.of("add n/Samuel i/A0123456B e/sam@example.com", "clear", "delete i/B1234567C",
                 "edit i/A0123456B n/Samuel", "unmark i/A0123456B d/2026-10-20 l/Tutorial 1",
                 "list", "find n/Alice", "find i/A1234567B", "find e/alice@example.com", "find r/recursion",
-                "find l/Tutorial 1")) {
+                "find l/Tutorial 1", "attendance d/2026-10-20 l/Tutorial 1")) {
             assertCommandException(command, LogicManager.MESSAGE_DATA_UNAVAILABLE);
         }
 
         // EP: invalid query syntax is still reported before the loading-failure guard
         assertParseException("find p/Alice", "Unknown parameter: p/.");
+        assertParseException("attendance d/2026-02-30 l/Tutorial 1", ParserUtil.MESSAGE_INVALID_DATE);
 
-        // EP: attendance, help, and exit remain available without changing the corrupt file
-        logic.execute("attendance d/2026-10-20 l/Tutorial 1");
+        // EP: help and exit remain available without changing the corrupt file
         logic.execute("help");
         logic.execute("exit");
         assertEquals("invalid student data", Files.readString(storage.getAddressBookFilePath()));
@@ -644,6 +644,8 @@ public class LogicManagerTest {
         String originalFile = Files.readString(storage.getAddressBookFilePath());
 
         assertEquals(ListCommand.MESSAGE_NO_STUDENTS_FOUND, logic.execute("list").getFeedbackToUser());
+        assertEquals(0, logic.execute("attendance d/2026-10-20 l/Tutorial 1")
+                .getAttendanceReport().orElseThrow().getEntries().size());
         assertEquals(String.format(MESSAGE_PERSONS_LISTED_OVERVIEW, 0),
                 logic.execute("find n/Alice").getFeedbackToUser());
         assertEquals(new AddressBook(), model.getAddressBook());
