@@ -534,8 +534,8 @@ shows the save-success and save-failure paths.
 * `MainAppTest` loads a data file without `attendance`, marks students, restarts through the normal startup path,
   and checks the saved attendance and duplicate-mark check.
 * `AttendanceListPanelTest` lays out the panel and checks its title, totals, members, and Present and Absent badges.
-  It is skipped where JavaFX cannot start. The Linux CI job, which uploads coverage, runs under `xvfb-run` so that
-  JavaFX tests have a virtual display.
+  JavaFX tests share a confirmed toolkit startup and fail explicitly if startup fails or times out. The Linux CI job,
+  which uploads coverage, runs under `xvfb-run` so that JavaFX tests have a virtual display.
 
 ### Loading student data at startup
 
@@ -572,16 +572,17 @@ each outcome.
 
 <puml src="diagrams/LoadSequenceDiagram.puml" alt="Loading student data at startup" />
 
-#### Blocking modifications after a failed load
+#### Blocking student-data commands after a failed load
 
 When loading fails, `MainApp` starts with an empty `AddressBook` and passes `isStudentDataAvailable = false` to
 `LogicManager`. `LogicManager#execute` parses each command first, so malformed commands still receive their usual
-error messages. It then rejects any command whose `Command#isModifyingData` returns true with
+error messages. It then rejects modifying commands (including `undo`), `list`, `find`, and `attendance` with
 `Student data is unavailable because loading failed. Fix the data file and restart.`
 
 This prevents the empty in-memory list from being saved over the user's data file, which may still be recoverable.
-Read-only commands, such as `list` and `find`, still run against the empty list. Restarting is the only way
-to retry loading.
+`list`, `find`, and `attendance` are blocked because the empty fallback model is not a successfully loaded dataset.
+`help` and `exit` remain available. A missing file or a successfully loaded empty file still permits student-data
+commands and genuine zero-total attendance reports. After fixing the file, restart to retry loading.
 
 Saving is described in [Saving before publishing changes](#saving-before-publishing-changes).
 
@@ -589,7 +590,7 @@ Saving is described in [Saving before publishing changes](#saving-before-publish
 
 **Aspect: What to do when the data file cannot be loaded**
 
-* **Alternative 1 (current choice):** Start with an empty list, keep the file, and block modifying commands.
+* **Alternative 1 (current choice):** Start with an empty list, keep the file, and block commands that change or query student data.
   * Pros: The user's data file is never overwritten, and the user sees why loading failed.
   * Cons: The app cannot be used to change records until the file is fixed.
 * **Alternative 2:** Start with an empty list and allow modifying commands, as in AddressBook-Level3.
@@ -599,7 +600,8 @@ Saving is described in [Saving before publishing changes](#saving-before-publish
 #### Verification
 
 `MainAppTest` covers a missing file, files with zero, one, and several students, a corrupted file, and duplicate Student
-IDs. It checks that modifying commands are blocked and the file is unchanged after a failed load.
+IDs. It checks that modifying commands and student-data queries are blocked and the file is unchanged after a failed
+load. Missing files and successfully loaded empty files remain usable.
 `JsonAddressBookStorageTest` covers unreadable files, invalid JSON, invalid values, and duplicate Student IDs.
 
 ### Undoing data changes
@@ -1168,7 +1170,7 @@ the current view, and the contents of `data/addressbook.json` are unchanged.
 | 6 | `undo` | Both complete records are restored and visible. |
 | 7 | `undo 1` | `Invalid command format!` followed by `Usage: undo`; records are unchanged. |
 | 8 | Run `undo` until the list is empty, then once more | The original two adds are reversed; the final response is `Nothing to undo.` |
-| 9 | `clear`, then `undo` | Clearing an empty list succeeds and creates a snapshot; undo reports `Undid last change.` and the list remains empty. |
+| 9 | `clear`, then `undo` | Clearing the empty list succeeds without adding a snapshot; undo reports `Nothing to undo.` because step 8 exhausted the history. The list remains empty. |
 
 The automated tests in `LogicManagerTest` cover eviction at the 100-snapshot history limit and failed-save preservation.
 
@@ -1188,8 +1190,8 @@ failed-replacement scenario, which deliberately introduces an obstruction while 
 
 | Case | Preparation and action | Expected result |
 |------|------------------------|-----------------|
-| Invalid JSON | Back up `data/addressbook.json`, replace its contents with `{`, then launch. Run `list`, then `clear`. | Startup reports corrupted or invalid data. `list` reports `No students found.`; `clear` reports that student data is unavailable. The invalid file remains untouched. Restore the backup and restart to recover both students. |
-| Duplicate ID | Duplicate a complete student object in the JSON `persons` array, then launch. | Startup reports the duplicate Student ID; modifying commands are blocked. Restore the backup and restart. |
+| Invalid JSON | Back up `data/addressbook.json`, replace its contents with `{`, then launch. Run `list`, `find n/Alex`, `attendance d/2026-10-20 l/Tutorial 1`, then `clear`. | Startup reports corrupted or invalid data. Each command reports `Student data is unavailable because loading failed. Fix the data file and restart.`; no empty-list result or attendance report is shown. The invalid file remains untouched. Restore the backup and restart to recover both students. |
+| Duplicate ID | Duplicate a complete student object in the JSON `persons` array, then launch. | Startup reports the duplicate Student ID; modifying commands, `list`, `find`, and `attendance` are blocked. Restore the backup and restart. |
 | Cannot create data folder | In a fresh test folder, create a regular file named `data` beside the JAR. Launch and try a valid add. | `Unable to create data storage location.`; no student is added. Close the app, remove the test obstruction, and restart before retrying. |
 | Failed replacement | In a baseline folder, launch and run `find n/Beth`. While the app remains open, rename `data/addressbook.json` to `addressbook.backup.json` in the same folder. Create a non-empty directory named `addressbook.json` in its place, then run `delete i/A0123456B`. | `Unable to save student data.`; Beth remains the only visible student. `list` still shows both students. The backup file is unchanged. Close the app, remove the test directory, restore the backup filename, and restart. |
 
