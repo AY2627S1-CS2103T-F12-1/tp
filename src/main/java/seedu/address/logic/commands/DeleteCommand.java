@@ -58,7 +58,7 @@ public class DeleteCommand extends Command {
 
         model.deletePerson(targetStudent);
         assert !model.hasPerson(targetStudent);
-        logger.info("Deleted student ID " + targetStudentId + ".");
+        logger.info("Deleted student.");
         return new CommandResult(String.format(MESSAGE_DELETE_PERSON_SUCCESS,
                 targetStudent.getStudentId(), targetStudent.getName()));
     }
@@ -69,7 +69,7 @@ public class DeleteCommand extends Command {
                 .filter(person -> person.getStudentId().equals(targetStudentId))
                 .findFirst()
                 .orElseThrow(() -> {
-                    logger.warning("Delete rejected: student ID " + targetStudentId + " not found.");
+                    logger.warning("Delete rejected: student not found.");
                     return new CommandException(String.format(MESSAGE_STUDENT_NOT_FOUND, targetStudentId));
                 });
     }

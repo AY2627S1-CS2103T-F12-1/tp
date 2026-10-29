@@ -10,7 +10,6 @@ import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import seedu.address.MainApp;
 import seedu.address.commons.core.LogsCenter;
-import seedu.address.commons.util.StringUtil;
 import seedu.address.logic.Logic;
 
 /**
@@ -49,7 +48,7 @@ public class UiManager implements Ui {
             mainWindow.fillInnerParts();
 
         } catch (Throwable e) {
-            logger.severe(StringUtil.getDetails(e));
+            logger.severe("UI initialization failed: " + e.getClass().getSimpleName());
             showFatalErrorDialogAndShutdown(primaryStage, "Fatal error during initializing", e);
         }
     }
@@ -84,7 +83,7 @@ public class UiManager implements Ui {
      * Takes the owner explicitly because the main window may not exist when startup fails.
      */
     private void showFatalErrorDialogAndShutdown(Stage owner, String title, Throwable e) {
-        logger.severe(title + " " + e.getMessage() + StringUtil.getDetails(e));
+        logger.severe(title + ": " + e.getClass().getSimpleName());
         showAlertDialogAndWait(owner, Alert.AlertType.ERROR, title, e.getMessage(), e.toString());
         exitApplication();
     }

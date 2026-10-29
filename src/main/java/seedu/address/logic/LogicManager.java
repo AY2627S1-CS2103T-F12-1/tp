@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 import javafx.collections.ObservableList;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.commons.core.LogsCenter;
+import seedu.address.logic.commands.AttendanceCommand;
 import seedu.address.logic.commands.Command;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.FindCommand;
@@ -25,6 +26,8 @@ import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.attendance.AttendanceReport;
 import seedu.address.model.person.Person;
+import seedu.address.storage.DataFileChangedException;
+import seedu.address.storage.DataFileInUseException;
 import seedu.address.storage.DataStorageLocationException;
 import seedu.address.storage.Storage;
 
@@ -34,6 +37,10 @@ import seedu.address.storage.Storage;
 public class LogicManager implements Logic {
     public static final String MESSAGE_SAVE_FAILURE = "Unable to save student data.";
     public static final String MESSAGE_STORAGE_LOCATION_FAILURE = "Unable to create data storage location.";
+    public static final String MESSAGE_DATA_CHANGED =
+            "Student data has changed outside this window. Restart TeachAssist to load the latest data before editing.";
+    public static final String MESSAGE_DATA_IN_USE =
+            "Student data is being saved by another window. Please try again.";
     public static final String MESSAGE_DATA_UNAVAILABLE =
             "Student data is unavailable because loading failed. Fix the data file and restart.";
 
@@ -84,17 +91,19 @@ public class LogicManager implements Logic {
      * {@inheritDoc}
      * Executes modifying commands against a temporary model and publishes their changes only after saving succeeds.
      * Commands that do not modify student data execute without saving. Startup loading failures block modifications,
-     * listing, and finding students.
+     * listing, finding students, and viewing attendance reports.
      * An open attendance report is refreshed after attendance changes and closed by other successful commands.
      */
     @Override
     public CommandResult execute(String commandText) throws CommandException, ParseException {
         requireNonNull(commandText);
-        logger.info("----------------[USER COMMAND][" + commandText + "]");
+        logger.info("Processing command.");
 
         Command command = addressBookParser.parseCommand(commandText);
+        logger.fine("Executing " + command.getClass().getSimpleName() + ".");
         if (!isStudentDataAvailable
-                && (command.isModifyingData() || command instanceof ListCommand || command instanceof FindCommand)) {
+                && (command.isModifyingData() || command instanceof ListCommand || command instanceof FindCommand
+                        || command instanceof AttendanceCommand)) {
             throw new CommandException(MESSAGE_DATA_UNAVAILABLE);
         }
         if (!command.isModifyingData()) {
@@ -170,11 +179,15 @@ public class LogicManager implements Logic {
         requireNonNull(addressBook);
         try {
             storage.saveAddressBook(addressBook);
+        } catch (DataFileChangedException e) {
+            throw new CommandException(MESSAGE_DATA_CHANGED, e);
+        } catch (DataFileInUseException e) {
+            throw new CommandException(MESSAGE_DATA_IN_USE, e);
         } catch (DataStorageLocationException dsle) {
-            logger.warning("Unable to create data storage location: " + dsle.getMessage());
+            logger.warning("Unable to create data storage location: " + dsle.getClass().getSimpleName());
             throw new CommandException(MESSAGE_STORAGE_LOCATION_FAILURE, dsle);
         } catch (IOException ioe) {
-            logger.warning("Unable to save student data: " + ioe.getMessage());
+            logger.warning("Unable to save student data: " + ioe.getClass().getSimpleName());
             throw new CommandException(MESSAGE_SAVE_FAILURE, ioe);
         }
     }
