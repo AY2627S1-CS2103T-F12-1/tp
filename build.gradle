@@ -26,6 +26,8 @@ checkstyle {
 
 test {
     useJUnitPlatform()
+    // Bound the worker process as well as individual JavaFX waits in case native startup stalls.
+    timeout = Duration.ofMinutes(5)
     finalizedBy jacocoTestReport
     testLogging {
         exceptionFormat = 'full'
