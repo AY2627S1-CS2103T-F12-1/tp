@@ -42,11 +42,12 @@ public class JsonAddressBookStorageTest {
         storage.saveAddressBook(original);
         String originalText = Files.readString(file);
         JsonAddressBookStorage failingStorage = replacementFailingStorage(file);
+        failingStorage.readAddressBook();
         assertThrows(IOException.class, () -> failingStorage.saveAddressBook(new AddressBook()));
         assertEquals(originalText, Files.readString(file));
         assertEquals(original, storage.readAddressBook().orElseThrow());
         try (Stream<Path> files = Files.list(testFolder)) {
-            assertEquals(1, files.count());
+            assertEquals(0, files.filter(path -> path.toString().endsWith(".tmp")).count());
         }
     }
 
@@ -56,7 +57,7 @@ public class JsonAddressBookStorageTest {
         assertThrows(IOException.class, () -> replacementFailingStorage(file).saveAddressBook(new AddressBook()));
         assertFalse(Files.exists(file));
         try (Stream<Path> files = Files.list(testFolder)) {
-            assertEquals(0, files.count());
+            assertEquals(0, files.filter(path -> path.toString().endsWith(".tmp")).count());
         }
     }
 

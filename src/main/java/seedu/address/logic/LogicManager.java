@@ -25,6 +25,8 @@ import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.attendance.AttendanceReport;
 import seedu.address.model.person.Person;
+import seedu.address.storage.DataFileChangedException;
+import seedu.address.storage.DataFileInUseException;
 import seedu.address.storage.DataStorageLocationException;
 import seedu.address.storage.Storage;
 
@@ -34,6 +36,10 @@ import seedu.address.storage.Storage;
 public class LogicManager implements Logic {
     public static final String MESSAGE_SAVE_FAILURE = "Unable to save student data.";
     public static final String MESSAGE_STORAGE_LOCATION_FAILURE = "Unable to create data storage location.";
+    public static final String MESSAGE_DATA_CHANGED =
+            "Student data has changed outside this window. Restart TeachAssist to load the latest data before editing.";
+    public static final String MESSAGE_DATA_IN_USE =
+            "Student data is being saved by another window. Please try again.";
     public static final String MESSAGE_DATA_UNAVAILABLE =
             "Student data is unavailable because loading failed. Fix the data file and restart.";
 
@@ -170,6 +176,10 @@ public class LogicManager implements Logic {
         requireNonNull(addressBook);
         try {
             storage.saveAddressBook(addressBook);
+        } catch (DataFileChangedException e) {
+            throw new CommandException(MESSAGE_DATA_CHANGED, e);
+        } catch (DataFileInUseException e) {
+            throw new CommandException(MESSAGE_DATA_IN_USE, e);
         } catch (DataStorageLocationException dsle) {
             logger.warning("Unable to create data storage location: " + dsle.getMessage());
             throw new CommandException(MESSAGE_STORAGE_LOCATION_FAILURE, dsle);
