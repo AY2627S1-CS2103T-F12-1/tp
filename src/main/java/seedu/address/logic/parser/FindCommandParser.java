@@ -14,6 +14,7 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import seedu.address.commons.util.StringUtil;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.EmailContainsKeywordsPredicate;
@@ -44,7 +45,7 @@ public class FindCommandParser implements Parser<FindCommand> {
      * @throws ParseException if the user input does not conform to the expected format
      */
     public FindCommand parse(String args) throws ParseException {
-        String trimmedArgs = args.trim();
+        String trimmedArgs = StringUtil.trimSpaces(args);
         ArgumentMultimap argMultimap =
                 ArgumentTokenizer.tokenize(trimmedArgs, PREFIX_NAME, PREFIX_STUDENT_ID,
                         PREFIX_EMAIL, PREFIX_REMARK, PREFIX_LABEL);
@@ -82,8 +83,8 @@ public class FindCommandParser implements Parser<FindCommand> {
     }
 
     private static void rejectWordsBeforeFirstPrefix(String args) throws ParseException {
-        Matcher matcher = PARAMETER_PREFIX.matcher(args);
-        if (matcher.find() && !args.substring(0, matcher.start(1)).isBlank()) {
+        Matcher matcher = PARAMETER_PREFIX.matcher(StringUtil.normaliseSpaces(args));
+        if (matcher.find() && !StringUtil.trimSpaces(args.substring(0, matcher.start(1))).isEmpty()) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, FindCommand.MESSAGE_USAGE));
         }
     }
@@ -107,7 +108,7 @@ public class FindCommandParser implements Parser<FindCommand> {
      * Parses the keywords belonging to {@code prefix}.
      */
     private static List<String> parseKeywords(ArgumentMultimap argumentMultimap, Prefix prefix) throws ParseException {
-        return List.of(parseSearchValue(argumentMultimap, prefix).split("\\s+"));
+        return List.of(StringUtil.normaliseSpaces(parseSearchValue(argumentMultimap, prefix)).split("\\s+"));
     }
 
     private static String parseSearchValue(ArgumentMultimap argumentMultimap, Prefix prefix) throws ParseException {
