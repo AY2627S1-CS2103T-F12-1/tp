@@ -44,6 +44,7 @@ import seedu.address.model.attendance.AttendanceReport;
 import seedu.address.model.label.Label;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.Person;
+import seedu.address.storage.DataFileInUseException;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
@@ -59,6 +60,75 @@ public class LogicManagerTest {
     private Model model = new ModelManager();
     private Logic logic;
     private StorageManager storage;
+
+    @Test
+    public void execute_staleInstance_preservesNewerFileModelFilterAndHistory() throws Exception {
+        AttendanceRecord record = new AttendanceRecord(LocalDate.parse("2026-10-20"), new Label("Tutorial 1"));
+        model.addPerson(new PersonBuilder(ALICE).withLabels("Tutorial 1").withAttendance(record).build());
+        model.addPerson(BENSON);
+        storage.saveAddressBook(model.getAddressBook());
+        StorageManager staleStorage = new StorageManager(new JsonAddressBookStorage(storage.getAddressBookFilePath()),
+                new JsonUserPrefsStorage(temporaryFolder.resolve("otherPreferences.json")));
+        Model staleModel = new ModelManager(staleStorage.readAddressBook().orElseThrow(), new UserPrefs());
+        AddressBook originalRecords = new AddressBook(staleModel.getAddressBook());
+        Logic staleLogic = new LogicManager(staleModel, staleStorage);
+        staleLogic.execute("find n/Benson");
+
+        logic.execute("add n/Samuel i/A0123456B e/sam@example.com");
+        String latestContents = Files.readString(storage.getAddressBookFilePath());
+        for (String command : List.of("add n/Carla i/C0123456D e/carla@example.com", "edit i/A1234567B n/Updated",
+                "delete i/B1234567C", "clear", "mark i/A1234567B d/2026-10-21 l/Tutorial 1",
+                "unmark i/A1234567B d/2026-10-20 l/Tutorial 1")) {
+            assertThrows(CommandException.class, LogicManager.MESSAGE_DATA_CHANGED, () -> staleLogic.execute(command));
+            assertEquals(latestContents, Files.readString(storage.getAddressBookFilePath()));
+            assertEquals(originalRecords, staleModel.getAddressBook());
+            assertEquals(List.of(BENSON), staleModel.getFilteredPersonList());
+        }
+        assertEquals(UndoCommand.MESSAGE_NOTHING_TO_UNDO, staleLogic.execute("undo").getFeedbackToUser());
+    }
+
+    @Test
+    public void execute_undoAfterExternalSave_preservesFileAndUndoHistory() throws Exception {
+        model.addPerson(ALICE);
+        logic.execute("add n/Samuel i/A0123456B e/sam@example.com");
+        logic.execute("find n/Samuel");
+        AddressBook originalRecords = new AddressBook(model.getAddressBook());
+        Person samuel = model.getFilteredPersonList().getFirst();
+        Path file = storage.getAddressBookFilePath();
+        String previousContents = Files.readString(file);
+        JsonAddressBookStorage otherStorage = new JsonAddressBookStorage(file);
+        AddressBook newerRecords = new AddressBook(otherStorage.readAddressBook().orElseThrow());
+        newerRecords.addPerson(BENSON);
+        otherStorage.saveAddressBook(newerRecords);
+        String latestContents = Files.readString(file);
+
+        assertThrows(CommandException.class, LogicManager.MESSAGE_DATA_CHANGED, () -> logic.execute("undo"));
+        assertEquals(latestContents, Files.readString(file));
+        assertEquals(originalRecords, model.getAddressBook());
+        assertEquals(List.of(samuel), model.getFilteredPersonList());
+
+        // Restoring the exact expected file allows a retry and demonstrates that failed undo kept its snapshot.
+        Files.writeString(file, previousContents);
+        assertEquals(UndoCommand.MESSAGE_SUCCESS, logic.execute("undo").getFeedbackToUser());
+        assertEquals(List.of(ALICE), model.getAddressBook().getPersonList());
+    }
+
+    @Test
+    public void execute_fileLocked_reportsRetryAndPreservesModel() throws Exception {
+        JsonAddressBookStorage busyStorage = new JsonAddressBookStorage(storage.getAddressBookFilePath()) {
+            @Override
+            public void saveAddressBook(ReadOnlyAddressBook addressBook) throws IOException {
+                throw new DataFileInUseException();
+            }
+        };
+        logic = new LogicManager(model, new StorageManager(busyStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json"))));
+
+        assertThrows(CommandException.class, LogicManager.MESSAGE_DATA_IN_USE, () ->
+                logic.execute("add n/Samuel i/A0123456B e/sam@example.com"));
+        assertEquals(new AddressBook(), model.getAddressBook());
+        assertEquals(UndoCommand.MESSAGE_NOTHING_TO_UNDO, logic.execute("undo").getFeedbackToUser());
+    }
 
     @Test
     public void execute_unmark_persistsRemovalAndPreservesFilter() throws Exception {
@@ -275,6 +345,7 @@ public class LogicManagerTest {
         logic = new LogicManager(model, new StorageManager(failingStorage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json"))));
 
+        failingStorage.readAddressBook();
         assertThrows(CommandException.class, LogicManager.MESSAGE_SAVE_FAILURE, () ->
                 logic.execute("unmark i/A1234567B d/2026-10-20 l/Tutorial 1"));
         assertEquals(List.of(student, BENSON), model.getAddressBook().getPersonList());
@@ -415,6 +486,7 @@ public class LogicManagerTest {
         logic = new LogicManager(model, new StorageManager(failingStorage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json"))));
 
+        failingStorage.readAddressBook();
         assertCommandException("mark i/A1234567B d/2026-10-20 l/Tutorial 1", LogicManager.MESSAGE_SAVE_FAILURE);
         assertEquals(List.of(student), model.getAddressBook().getPersonList());
         assertEquals(originalFile, Files.readString(storage.getAddressBookFilePath()));
@@ -550,15 +622,15 @@ public class LogicManagerTest {
         for (String command : List.of("add n/Samuel i/A0123456B e/sam@example.com", "clear", "delete i/B1234567C",
                 "edit i/A0123456B n/Samuel", "unmark i/A0123456B d/2026-10-20 l/Tutorial 1",
                 "list", "find n/Alice", "find i/A1234567B", "find e/alice@example.com", "find r/recursion",
-                "find l/Tutorial 1")) {
+                "find l/Tutorial 1", "attendance d/2026-10-20 l/Tutorial 1")) {
             assertCommandException(command, LogicManager.MESSAGE_DATA_UNAVAILABLE);
         }
 
         // EP: invalid query syntax is still reported before the loading-failure guard
         assertParseException("find p/Alice", "Unknown parameter: p/.");
+        assertParseException("attendance d/2026-02-30 l/Tutorial 1", ParserUtil.MESSAGE_INVALID_DATE);
 
-        // EP: attendance, help, and exit remain available without changing the corrupt file
-        logic.execute("attendance d/2026-10-20 l/Tutorial 1");
+        // EP: help and exit remain available without changing the corrupt file
         logic.execute("help");
         logic.execute("exit");
         assertEquals("invalid student data", Files.readString(storage.getAddressBookFilePath()));
@@ -572,6 +644,8 @@ public class LogicManagerTest {
         String originalFile = Files.readString(storage.getAddressBookFilePath());
 
         assertEquals(ListCommand.MESSAGE_NO_STUDENTS_FOUND, logic.execute("list").getFeedbackToUser());
+        assertEquals(0, logic.execute("attendance d/2026-10-20 l/Tutorial 1")
+                .getAttendanceReport().orElseThrow().getEntries().size());
         assertEquals(String.format(MESSAGE_PERSONS_LISTED_OVERVIEW, 0),
                 logic.execute("find n/Alice").getFeedbackToUser());
         assertEquals(new AddressBook(), model.getAddressBook());
@@ -596,6 +670,7 @@ public class LogicManagerTest {
         };
         logic = new LogicManager(model, new StorageManager(failingStorage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json"))));
+        failingStorage.readAddressBook();
         for (String command : List.of("add n/Samuel i/A0123456B e/sam@example.com", "delete i/B1234567C", "clear",
                 "edit i/A1234567B n/Updated Name", "edit i/A1234567B l/Tutorial A")) {
             assertThrows(CommandException.class, LogicManager.MESSAGE_SAVE_FAILURE, () -> logic.execute(command));

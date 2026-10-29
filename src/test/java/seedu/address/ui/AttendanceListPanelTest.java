@@ -3,20 +3,15 @@ package seedu.address.ui;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BENSON;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import javafx.application.Platform;
 import javafx.geometry.Bounds;
 import javafx.geometry.Orientation;
 import javafx.scene.Node;
@@ -31,41 +26,31 @@ import seedu.address.model.attendance.AttendanceRecord;
 import seedu.address.model.attendance.AttendanceReport;
 import seedu.address.model.attendance.AttendanceReport.AttendanceEntry;
 import seedu.address.model.person.Person;
+import seedu.address.testutil.FxTestUtil;
 import seedu.address.testutil.PersonBuilder;
 
 /**
- * Checks the attendance view's content. Skipped where JavaFX cannot start, such as on a machine without a display;
- * CI runs it on Linux under a virtual display.
+ * Checks the attendance view's content. JavaFX startup failures fail the suite; Linux CI uses a virtual display.
  */
 public class AttendanceListPanelTest {
 
     private static final LocalDate DATE = LocalDate.parse("2026-10-20");
     private static final seedu.address.model.label.Label GROUP = new seedu.address.model.label.Label("Tutorial 1");
 
-    private static boolean isToolkitAvailable;
-
     @BeforeAll
-    public static void startToolkit() {
-        try {
-            Platform.startup(() -> { });
-            isToolkitAvailable = true;
-        } catch (IllegalStateException e) {
-            isToolkitAvailable = true; // already started by another test
-        } catch (RuntimeException | UnsatisfiedLinkError e) {
-            isToolkitAvailable = false;
-        }
+    public static void startToolkit() throws Exception {
+        FxTestUtil.initialize();
     }
 
     @Test
     public void constructor_report_showsTitleTotalsAndMembers() throws Exception {
         // EP: report with both present and absent members renders title, totals, rows, and both badge styles
-        assumeTrue(isToolkitAvailable);
         Person present = new PersonBuilder(ALICE).withLabels("Tutorial 1")
                 .withAttendance(new AttendanceRecord(DATE, GROUP)).build();
         Person absent = new PersonBuilder(BENSON).withLabels("Tutorial 1").build();
         AttendanceReport report = AttendanceReport.of(List.of(present, absent), DATE, GROUP);
 
-        Parent root = onFxThread(() -> layOut(new AttendanceListPanel(report).getRoot()));
+        Parent root = FxTestUtil.callAndWait(() -> layOut(new AttendanceListPanel(report).getRoot()));
 
         assertEquals("Attendance: Tutorial 1 on 2026-10-20", ((Label) root.lookup("#title")).getText());
         assertEquals("Present: 1    Absent: 1", ((Label) root.lookup("#totals")).getText());
@@ -77,10 +62,9 @@ public class AttendanceListPanelTest {
     @Test
     public void constructor_emptyReport_showsZeroTotals() throws Exception {
         // BVA: zero present and zero absent members render zero totals and no status badge
-        assumeTrue(isToolkitAvailable);
         AttendanceReport report = AttendanceReport.of(List.of(), DATE, GROUP);
 
-        Parent root = onFxThread(() -> layOut(new AttendanceListPanel(report).getRoot()));
+        Parent root = FxTestUtil.callAndWait(() -> layOut(new AttendanceListPanel(report).getRoot()));
 
         assertEquals("Present: 0    Absent: 0", ((Label) root.lookup("#totals")).getText());
         assertTrue(((ListView<?>) root.lookup("#attendanceListView")).getItems().isEmpty());
@@ -90,9 +74,10 @@ public class AttendanceListPanelTest {
     @Test
     public void attendanceCard_entry_showsStudentAndStatusBadge() throws Exception {
         // EP: present and absent entry cards render their student details and distinct status badges
-        assumeTrue(isToolkitAvailable);
-        Node presentCard = onFxThread(() -> new AttendanceCard(new AttendanceEntry(ALICE, true), 1).getRoot());
-        Node absentCard = onFxThread(() -> new AttendanceCard(new AttendanceEntry(BENSON, false), 2).getRoot());
+        Node presentCard = FxTestUtil.callAndWait(() ->
+                new AttendanceCard(new AttendanceEntry(ALICE, true), 1).getRoot());
+        Node absentCard = FxTestUtil.callAndWait(() ->
+                new AttendanceCard(new AttendanceEntry(BENSON, false), 2).getRoot());
 
         assertEquals("1. ", ((Label) presentCard.lookup("#id")).getText());
         assertEquals("Alice Pauline", ((Label) presentCard.lookup("#name")).getText());
@@ -109,11 +94,10 @@ public class AttendanceListPanelTest {
 
     @Test
     public void attendanceCard_longName_wrapsAndKeepsStatusVisible() throws Exception {
-        assumeTrue(isToolkitAvailable);
         String longName = "Alexandra ".repeat(10).trim() + "A";
         Person student = new PersonBuilder(ALICE).withName(longName).withLabels("Tutorial 1").build();
 
-        onFxThread(() -> {
+        FxTestUtil.callAndWait(() -> {
             // EP: an absent student with a maximum-length name at the minimum list width
             // BVA: 100-character name and 320-pixel list width within the minimum 340-pixel list pane
             double narrowNameHeight = assertBadgeVisible(student, 320);
@@ -127,8 +111,7 @@ public class AttendanceListPanelTest {
 
     @Test
     public void attendanceCard_longNames_wrapAndKeepStatusVisibleWhenResized() throws Exception {
-        assumeTrue(isToolkitAvailable);
-        onFxThread(() -> {
+        FxTestUtil.callAndWait(() -> {
             // EP: present and absent students both keep their badges visible with long names
             // BVA: the present student's name is exactly the 100-character maximum
             Person present = new PersonBuilder(ALICE).withName("M".repeat(100)).withLabels("Tutorial 1")
@@ -182,8 +165,7 @@ public class AttendanceListPanelTest {
 
     @Test
     public void constructor_longGroupHeading_remainsReadableInSmallAndResizedWindows() throws Exception {
-        assumeTrue(isToolkitAvailable);
-        onFxThread(() -> {
+        FxTestUtil.callAndWait(() -> {
             var group = new seedu.address.model.label.Label("W".repeat(60));
             Person member = new PersonBuilder(ALICE).withLabels(group.labelName).build();
             for (List<Person> members : List.of(List.of(member), List.<Person>of())) {
@@ -258,15 +240,4 @@ public class AttendanceListPanelTest {
         return root;
     }
 
-    private static <T> T onFxThread(Supplier<T> supplier) throws Exception {
-        CompletableFuture<T> result = new CompletableFuture<>();
-        Platform.runLater(() -> {
-            try {
-                result.complete(supplier.get());
-            } catch (RuntimeException | AssertionError e) {
-                result.completeExceptionally(e);
-            }
-        });
-        return result.get(10, TimeUnit.SECONDS);
-    }
 }
