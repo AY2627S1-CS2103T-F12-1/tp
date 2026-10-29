@@ -5,11 +5,13 @@ import static seedu.address.testutil.Assert.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
+import seedu.address.testutil.FxTestUtil;
+
 public class AppUtilTest {
 
     @Test
-    public void getImage_exitingImage() {
-        assertNotNull(AppUtil.getImage("/images/address_book_32.png"));
+    public void getImage_exitingImage() throws Exception {
+        FxTestUtil.runAndWait(() -> assertNotNull(AppUtil.getImage("/images/address_book_32.png")));
     }
 
     @Test

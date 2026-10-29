@@ -24,80 +24,105 @@ public class PersonTest {
     private static final String VALID_LABEL_TUTORIAL = "Discrete Math Tutorial";
 
     @Test
+    public void constructor_nullParameters_throwsNullPointerException() {
+        // EP: null name
+        assertThrows(NullPointerException.class, () ->
+                new Person(null, ALICE.getStudentId(), ALICE.getEmail()));
+        // EP: null studentId
+        assertThrows(NullPointerException.class, () ->
+                new Person(ALICE.getName(), null, ALICE.getEmail()));
+        // EP: null email
+        assertThrows(NullPointerException.class, () ->
+                new Person(ALICE.getName(), ALICE.getStudentId(), null));
+        // EP: null labels
+        assertThrows(NullPointerException.class, () ->
+                new Person(ALICE.getName(), ALICE.getStudentId(), ALICE.getEmail(), null, new Remark("")));
+        // EP: null remark
+        assertThrows(NullPointerException.class, () ->
+                new Person(ALICE.getName(), ALICE.getStudentId(), ALICE.getEmail(), ALICE.getLabels(), null));
+        // EP: null attendance
+        assertThrows(NullPointerException.class, () ->
+                new Person(ALICE.getName(), ALICE.getStudentId(), ALICE.getEmail(),
+                        ALICE.getLabels(), ALICE.getRemark(), null));
+    }
+
+    @Test
     public void getLabels_modifySet_throwsUnsupportedOperationException() {
+        // EP: modify unmodifiable labels collection
         Person person = new PersonBuilder().build();
         assertThrows(UnsupportedOperationException.class, () -> person.getLabels().clear());
     }
 
     @Test
     public void getAttendance_modifySet_throwsUnsupportedOperationException() {
+        // EP: modify unmodifiable attendance collection
         Person person = new PersonBuilder().build();
         assertThrows(UnsupportedOperationException.class, () -> person.getAttendance().clear());
     }
 
     @Test
     public void isSamePerson() {
-        // same object -> returns true
+        // EP: same object
         assertTrue(ALICE.isSamePerson(ALICE));
 
-        // null -> returns false
+        // EP: null
         assertFalse(ALICE.isSamePerson(null));
 
-        // same student ID, all other attributes different -> returns true
+        // EP: same student ID, all other attributes different
         Person editedAlice = new PersonBuilder(ALICE).withName(VALID_NAME_BOB)
                 .withEmail(VALID_EMAIL_BOB).withLabels(VALID_LABEL_TUTORIAL).build();
         assertTrue(ALICE.isSamePerson(editedAlice));
 
-        // different student ID, all other attributes same -> returns false
+        // EP: different student ID, all other attributes same
         editedAlice = new PersonBuilder(ALICE).withStudentId(VALID_STUDENT_ID_BOB).build();
         assertFalse(ALICE.isSamePerson(editedAlice));
 
-        // student ID differs in case, all other attributes same -> returns true
-        // Used to be `editedBob`, edited to express intent better
+        // EP: student ID differs only in case, all other attributes same
         Person anotherPersonBob = new PersonBuilder(BOB)
                 .withStudentId(BOB.getStudentId().toString().toLowerCase())
                 .build();
         assertTrue(BOB.isSamePerson(anotherPersonBob));
 
-        // same name, different student ID -> returns false
+        // EP: same name, different student ID
         anotherPersonBob = new PersonBuilder(BOB).withStudentId(VALID_STUDENT_ID_OTHER_BOB).build();
         assertFalse(BOB.isSamePerson(anotherPersonBob));
     }
 
     @Test
     public void equals() {
-        // same values -> returns true
+        // EP: same values
         Person aliceCopy = new PersonBuilder(ALICE).build();
         assertTrue(ALICE.equals(aliceCopy));
 
-        // same object -> returns true
+        // EP: same object
         assertTrue(ALICE.equals(ALICE));
 
-        // null -> returns false
+        // EP: null
         assertFalse(ALICE.equals(null));
 
-        // different type -> returns false
+        // EP: different type
         assertFalse(ALICE.equals(5));
 
-        // different person -> returns false
+        // EP: different person
         assertFalse(ALICE.equals(BOB));
 
-        // different name -> returns false
+        // EP: different name
         Person editedAlice = new PersonBuilder(ALICE).withName(VALID_NAME_BOB).build();
         assertFalse(ALICE.equals(editedAlice));
 
-        // different student ID -> returns false
+        // EP: different student ID
         editedAlice = new PersonBuilder(ALICE).withStudentId(VALID_STUDENT_ID_BOB).build();
         assertFalse(ALICE.equals(editedAlice));
 
-        // different email -> returns false
+        // EP: different email
         editedAlice = new PersonBuilder(ALICE).withEmail(VALID_EMAIL_BOB).build();
         assertFalse(ALICE.equals(editedAlice));
 
-        // different labels -> returns false
+        // EP: different labels
         editedAlice = new PersonBuilder(ALICE).withLabels(VALID_LABEL_TUTORIAL).build();
         assertFalse(ALICE.equals(editedAlice));
 
+        // EP: different attendance records
         AttendanceRecord record = new AttendanceRecord(LocalDate.parse("2026-10-20"), new Label("Tutorial 1"));
         editedAlice = new PersonBuilder(ALICE).withAttendance(record).build();
         assertFalse(ALICE.equals(editedAlice));
@@ -105,6 +130,7 @@ public class PersonTest {
 
     @Test
     public void constructor_withoutRemark_defaultsToEmptyRemark() {
+        // EP: 3-parameter constructor defaults remark and attendance
         Person person = new Person(ALICE.getName(), ALICE.getStudentId(), ALICE.getEmail());
 
         assertEquals(ALICE.getStudentId(), person.getStudentId());
@@ -114,16 +140,19 @@ public class PersonTest {
 
     @Test
     public void constructor_nullRemark_throwsNullPointerException() {
+        // EP: null remark
         assertThrows(NullPointerException.class, () -> withRemark(ALICE, null));
     }
 
     @Test
     public void equals_differentRemark_returnsFalseButSamePerson() {
+        // EP: same student ID, different remark
         Person remarkedAlice = withRemark(ALICE, new Remark("Needs help with recursion"));
         assertEquals(new Remark("Needs help with recursion"), remarkedAlice.getRemark());
         assertFalse(ALICE.equals(remarkedAlice));
         assertTrue(ALICE.isSamePerson(remarkedAlice));
 
+        // EP: same values with custom remark
         Person remarkedAliceCopy = withRemark(ALICE, new Remark("Needs help with recursion"));
         assertEquals(remarkedAlice, remarkedAliceCopy);
         assertEquals(remarkedAlice.hashCode(), remarkedAliceCopy.hashCode());
@@ -136,6 +165,7 @@ public class PersonTest {
 
     @Test
     public void toStringMethod() {
+        // EP: toString includes all attributes
         String expected = Person.class.getCanonicalName() + "{name=" + ALICE.getName()
                 + ", studentId=" + ALICE.getStudentId() + ", email=" + ALICE.getEmail()
                 + ", labels=" + ALICE.getLabels()

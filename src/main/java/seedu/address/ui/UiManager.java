@@ -10,7 +10,6 @@ import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import seedu.address.MainApp;
 import seedu.address.commons.core.LogsCenter;
-import seedu.address.commons.util.StringUtil;
 import seedu.address.logic.Logic;
 
 /**
@@ -49,8 +48,8 @@ public class UiManager implements Ui {
             mainWindow.fillInnerParts();
 
         } catch (Throwable e) {
-            logger.severe(StringUtil.getDetails(e));
-            showFatalErrorDialogAndShutdown("Fatal error during initializing", e);
+            logger.severe("UI initialization failed: " + e.getClass().getSimpleName());
+            showFatalErrorDialogAndShutdown(primaryStage, "Fatal error during initializing", e);
         }
     }
 
@@ -65,9 +64,9 @@ public class UiManager implements Ui {
     /**
      * Shows an alert dialog on {@code owner} with the given parameters.
      * This method only returns after the user has closed the alert dialog.
+     * Package-private so tests can observe the dialog without showing it.
      */
-    private static void showAlertDialogAndWait(Stage owner, AlertType type, String title, String headerText,
-                                               String contentText) {
+    void showAlertDialogAndWait(Stage owner, AlertType type, String title, String headerText, String contentText) {
         final Alert alert = new Alert(type);
         alert.getDialogPane().getStylesheets().add("view/DarkTheme.css");
         alert.initOwner(owner);
@@ -79,12 +78,21 @@ public class UiManager implements Ui {
     }
 
     /**
-     * Shows an error alert dialog with {@code title} and error message, {@code e},
+     * Shows an error alert dialog on {@code owner} with {@code title} and error message, {@code e},
      * and exits the application after the user has closed the alert dialog.
+     * Takes the owner explicitly because the main window may not exist when startup fails.
      */
-    private void showFatalErrorDialogAndShutdown(String title, Throwable e) {
-        logger.severe(title + " " + e.getMessage() + StringUtil.getDetails(e));
-        showAlertDialogAndWait(Alert.AlertType.ERROR, title, e.getMessage(), e.toString());
+    private void showFatalErrorDialogAndShutdown(Stage owner, String title, Throwable e) {
+        logger.severe(title + ": " + e.getClass().getSimpleName());
+        showAlertDialogAndWait(owner, Alert.AlertType.ERROR, title, e.getMessage(), e.toString());
+        exitApplication();
+    }
+
+    /**
+     * Ends the application with a failure status.
+     * Package-private so tests can observe a fatal startup error without ending the test run.
+     */
+    void exitApplication() {
         Platform.exit();
         System.exit(1);
     }

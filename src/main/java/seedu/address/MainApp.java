@@ -10,7 +10,6 @@ import javafx.stage.Stage;
 import seedu.address.commons.core.AppPaths;
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.exceptions.DataLoadingException;
-import seedu.address.commons.util.StringUtil;
 import seedu.address.logic.Logic;
 import seedu.address.logic.LogicManager;
 import seedu.address.model.AddressBook;
@@ -31,7 +30,7 @@ import seedu.address.ui.UiManager;
  */
 public class MainApp extends Application {
 
-    public static final String VERSION = "V1.4";
+    public static final String VERSION = "V1.5";
     public static final String MESSAGE_STUDENTS_LOADED = "%1$d students loaded.";
     public static final String MESSAGE_ONE_STUDENT_LOADED = "1 student loaded.";
     public static final String MESSAGE_NO_EXISTING_DATA =
@@ -140,7 +139,7 @@ public class MainApp extends Application {
         try {
             storage.saveUserPrefs(initializedPrefs);
         } catch (IOException e) {
-            logger.warning("Failed to save preference file : " + StringUtil.getDetails(e));
+            logger.warning("Failed to save preference file: " + e.getClass().getSimpleName());
         }
 
         return initializedPrefs;
@@ -158,7 +157,7 @@ public class MainApp extends Application {
         try {
             storage.saveUserPrefs(model.getUserPrefs());
         } catch (IOException e) {
-            logger.severe("Failed to save preferences " + StringUtil.getDetails(e));
+            logger.severe("Failed to save preferences: " + e.getClass().getSimpleName());
         }
     }
 }

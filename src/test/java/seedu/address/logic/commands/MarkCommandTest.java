@@ -34,6 +34,7 @@ public class MarkCommandTest {
 
     @Test
     public void execute_studentInGroup_addsAttendance() {
+        // EP: existing student with a current group label, hidden by the active filter
         Person student = new PersonBuilder(ALICE).withLabels(GROUP.labelName).build();
         model.setPerson(ALICE, student);
         model.updateFilteredPersonList(new NameContainsKeywordsPredicate(List.of("Benson")));
@@ -50,14 +51,17 @@ public class MarkCommandTest {
 
     @Test
     public void execute_missingStudentOrGroup_preservesRecords() {
+        // EP: unknown student ID leaves the address book and active filter unchanged
         assertCommandFailure(new MarkCommand(new StudentId("Z9999999Z"), DATE, GROUP), model,
                 "Student with ID Z9999999Z is not in the records.");
+        // EP: existing student without the requested current group label leaves data unchanged
         assertCommandFailure(new MarkCommand(ALICE.getStudentId(), DATE, GROUP), model,
                 "Student A1234567B does not have group label \"Tutorial 1\".");
     }
 
     @Test
     public void execute_duplicateDateAndGroup_rejectsRegardlessOfCase() {
+        // EP: an existing date/group pair, matched case-insensitively, is not added twice
         AttendanceRecord record = new AttendanceRecord(DATE, GROUP);
         Person student = new PersonBuilder(ALICE).withLabels(GROUP.labelName).withAttendance(record).build();
         model.setPerson(ALICE, student);
@@ -78,6 +82,7 @@ public class MarkCommandTest {
 
     @Test
     public void constructor_nullField_throwsNullPointerException() {
+        // EP: each required command field is absent
         assertThrows(NullPointerException.class, () -> new MarkCommand(null, DATE, GROUP));
         assertThrows(NullPointerException.class, () -> new MarkCommand(ALICE.getStudentId(), null, GROUP));
         assertThrows(NullPointerException.class, () -> new MarkCommand(ALICE.getStudentId(), DATE, null));

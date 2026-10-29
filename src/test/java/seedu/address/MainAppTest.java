@@ -37,6 +37,11 @@ public class MainAppTest {
         Logic logic = new TestApp().loadLogic(storage);
         assertEquals(MainApp.MESSAGE_NO_EXISTING_DATA, logic.getStartupMessage());
         assertEquals(0, logic.getFilteredPersonList().size());
+        // EP: a missing file starts with available, empty student data
+        assertEquals("No students found.", logic.execute("list").getFeedbackToUser());
+        assertEquals("0 students listed.", logic.execute("find n/Alice").getFeedbackToUser());
+        assertEquals(0, logic.execute("attendance d/2026-10-20 l/Tutorial 1")
+                .getAttendanceReport().orElseThrow().getEntries().size());
         logic.execute("add n/Samuel i/A0123456B e/sam@example.com");
         assertEquals(1, storage.readAddressBook().orElseThrow().getPersonList().size());
     }
@@ -50,8 +55,28 @@ public class MainAppTest {
         assertEquals(0, logic.getFilteredPersonList().size());
         assertThrows(CommandException.class, LogicManager.MESSAGE_DATA_UNAVAILABLE, ()
             -> logic.execute("add n/Samuel i/A0123456B e/sam@example.com"));
-        logic.execute("list");
+        // EP: corrupt student data blocks both list and find after startup
+        assertThrows(CommandException.class, LogicManager.MESSAGE_DATA_UNAVAILABLE, () -> logic.execute("list"));
+        assertThrows(CommandException.class, LogicManager.MESSAGE_DATA_UNAVAILABLE, () ->
+                logic.execute("find n/Alice"));
+        assertThrows(CommandException.class, LogicManager.MESSAGE_DATA_UNAVAILABLE, () ->
+                logic.execute("attendance d/2026-10-20 l/Tutorial 1"));
         assertEquals("corrupt data", Files.readString(storage.getAddressBookFilePath()));
+    }
+
+    @Test
+    public void startup_unreadableData_blocksAttendanceAndPreservesDirectory() throws Exception {
+        Storage storage = createStorage();
+        Path dataDirectory = Files.createDirectory(storage.getAddressBookFilePath());
+        Path retainedFile = Files.writeString(dataDirectory.resolve("keep.txt"), "Keep this file.");
+        Logic logic = new TestApp().loadLogic(storage);
+
+        assertEquals(JsonAddressBookStorage.MESSAGE_UNREADABLE_FILE, logic.getStartupMessage());
+        assertThrows(CommandException.class, LogicManager.MESSAGE_DATA_UNAVAILABLE, () ->
+                logic.execute("attendance d/2026-10-20 l/Tutorial 1"));
+        assertEquals("Keep this file.", Files.readString(retainedFile));
+        logic.execute("help");
+        logic.execute("exit");
     }
 
     @Test
@@ -64,6 +89,18 @@ public class MainAppTest {
         assertInvalidStudentDataPreserved("{\"persons\":[null]}");
     }
 
+    @Test
+    public void startup_ambiguousOrMistypedJson_blocksModificationsAndPreservesFile() throws Exception {
+        String student = "{\"name\":\"Alex Tan\",\"studentId\":\"A0123456B\",\"email\":\"alex@example.com\"}";
+        for (String contents : List.of(
+                "{\"persons\":[" + student + "]} garbage",
+                "{\"persons\":[]} {\"persons\":[" + student + "]}",
+                "{\"persons\":[" + student + "],\"persons\":[]}",
+                "{\"persons\":[" + student.replace("\"Alex Tan\"", "true") + "]}")) {
+            assertInvalidStudentDataPreserved(contents);
+        }
+    }
+
     private void assertInvalidStudentDataPreserved(String contents) throws Exception {
         Storage storage = createStorage();
         Files.writeString(storage.getAddressBookFilePath(), contents);
@@ -72,11 +109,12 @@ public class MainAppTest {
         assertEquals(JsonAddressBookStorage.MESSAGE_INVALID_FILE, logic.getStartupMessage());
         assertEquals(0, logic.getFilteredPersonList().size());
         for (String command : List.of("add n/Samuel i/A0123456B e/sam@example.com", "clear",
-                "delete i/A0123456B", "edit i/A0123456B n/Samuel")) {
+                "delete i/A0123456B", "edit i/A0123456B n/Samuel", "list", "find n/Alice",
+                "attendance d/2026-10-20 l/Tutorial 1")) {
             assertThrows(CommandException.class, LogicManager.MESSAGE_DATA_UNAVAILABLE, ()
                 -> logic.execute(command));
         }
-        logic.execute("list");
+        logic.execute("help");
         assertEquals(contents, Files.readString(storage.getAddressBookFilePath()));
     }
 
