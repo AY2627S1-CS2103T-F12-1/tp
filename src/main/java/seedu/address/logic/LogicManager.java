@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 import javafx.collections.ObservableList;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.commons.core.LogsCenter;
+import seedu.address.logic.commands.AttendanceCommand;
 import seedu.address.logic.commands.Command;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.FindCommand;
@@ -84,7 +85,7 @@ public class LogicManager implements Logic {
      * {@inheritDoc}
      * Executes modifying commands against a temporary model and publishes their changes only after saving succeeds.
      * Commands that do not modify student data execute without saving. Startup loading failures block modifications,
-     * listing, and finding students.
+     * listing, finding students, and viewing attendance reports.
      * An open attendance report is refreshed after attendance changes and closed by other successful commands.
      */
     @Override
@@ -94,7 +95,8 @@ public class LogicManager implements Logic {
 
         Command command = addressBookParser.parseCommand(commandText);
         if (!isStudentDataAvailable
-                && (command.isModifyingData() || command instanceof ListCommand || command instanceof FindCommand)) {
+                && (command.isModifyingData() || command instanceof ListCommand || command instanceof FindCommand
+                        || command instanceof AttendanceCommand)) {
             throw new CommandException(MESSAGE_DATA_UNAVAILABLE);
         }
         if (!command.isModifyingData()) {
