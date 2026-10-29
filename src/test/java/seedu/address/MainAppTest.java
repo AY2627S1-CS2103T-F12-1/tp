@@ -89,6 +89,18 @@ public class MainAppTest {
         assertInvalidStudentDataPreserved("{\"persons\":[null]}");
     }
 
+    @Test
+    public void startup_ambiguousOrMistypedJson_blocksModificationsAndPreservesFile() throws Exception {
+        String student = "{\"name\":\"Alex Tan\",\"studentId\":\"A0123456B\",\"email\":\"alex@example.com\"}";
+        for (String contents : List.of(
+                "{\"persons\":[" + student + "]} garbage",
+                "{\"persons\":[]} {\"persons\":[" + student + "]}",
+                "{\"persons\":[" + student + "],\"persons\":[]}",
+                "{\"persons\":[" + student.replace("\"Alex Tan\"", "true") + "]}")) {
+            assertInvalidStudentDataPreserved(contents);
+        }
+    }
+
     private void assertInvalidStudentDataPreserved(String contents) throws Exception {
         Storage storage = createStorage();
         Files.writeString(storage.getAddressBookFilePath(), contents);
