@@ -20,8 +20,8 @@ For TeachAssist questions and bug reports, use the [project issue tracker](https
 [[github](https://github.com/sammeowwww)]
 [[portfolio](team/sammeowwww.md)]
 
-* Role: Project Advisor
-* Responsibilities: Student add/delete commands and command documentation
+* Role: Developer
+* Responsibilities: Student add/delete/edit/mark commands and command documentation
 
 ### Ananya Kharbanda
 
