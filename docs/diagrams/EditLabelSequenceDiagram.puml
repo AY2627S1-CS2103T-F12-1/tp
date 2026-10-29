@@ -46,7 +46,7 @@ Logic -> Live : getAddressBook(), getUserPrefs(), getFilteredPersonListPredicate
 Live --> Logic : records, preferences, filter
 create Pending
 Logic -> Pending : new ModelManager(records, preferences)
-Logic -> Pending : updateFilteredPersonList(filter::test)
+Logic -> Pending : updateFilteredPersonList(filter)
 Logic -> Command : execute(pending)
 activate Command
 Command -> Pending : getAddressBook().getPersonList()
@@ -67,16 +67,25 @@ Logic -> Storage : saveAddressBook(pending.getAddressBook())
 activate Storage
 alt save succeeds
 Storage --> Logic : saved
+Logic -> Logic : recordUndoSnapshot(previousAddressBook, pending records)
 Logic -> Live : setAddressBook(pending.getAddressBook())
 Logic -> Live : updateFilteredPersonList(pending filter)
 [<-- Logic : success result
 else save fails
-Storage --> Logic : IOException
+Storage --> Logic : IOException (save error)
 note over Live
 Live records and filter remain unchanged.
 end note
 [<-- Logic : CommandException (save error)
 end
 deactivate Storage
+note over Logic
+Capture previousAddressBook before command execution.
+Retain it after saving only if records changed (maximum 100 snapshots).
+Close any displayed attendance report on success.
+On failure, preserve undo history and the displayed report.
+Map external changes, another writer, storage location,
+and general I/O failures to their respective error messages.
+end note
 deactivate Logic
 @enduml

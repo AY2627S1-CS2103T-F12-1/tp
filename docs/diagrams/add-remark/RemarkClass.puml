@@ -1,19 +1,30 @@
 @startuml
 hide circle
 skinparam classAttributeIconSize 0
-
-Class "{abstract}\nCommand" as Command {
-  +execute(Model): CommandResult
+title Remarks are stored through add and edit
+abstract class Command {
+  +execute(model: Model): CommandResult
 }
-Class RemarkCommand {
-  +COMMAND_WORD: String
-  +MESSAGE_USAGE: String
-  +MESSAGE_NOT_IMPLEMENTED_YET: String
-  +execute(Model): CommandResult
+class AddCommand
+class EditCommand
+class "EditCommand.EditPersonDescriptor" as Descriptor {
+  +getRemark(): Optional<Remark>
+  +setRemark(remark: Remark)
 }
-Class CommandException
-
-RemarkCommand -up-|> Command
-Command ..> CommandException: throws >
-RemarkCommand .right.> CommandException: throws >
+class Person
+class Remark {
+  +value: String
+}
+class CommandException
+AddCommand -up-|> Command
+EditCommand -up-|> Command
+AddCommand --> Person : toAdd
+EditCommand *--> Descriptor
+Descriptor --> "0..1" Remark
+Person --> "1" Remark
+Command ..> CommandException : throws
+note bottom of Remark
+An omitted r/ on add creates an empty remark.
+On edit, omitted r/ retains the remark; empty r/ clears it.
+end note
 @enduml

@@ -7,17 +7,20 @@ state "Live records: D\nHistory (oldest to newest): A, B, C" as AfterChange
 state "Live records: C\nHistory (oldest to newest): A, B" as AfterUndo
 state "Live records: E\nHistory (oldest to newest): A, B, C" as AfterNewChange
 
-BeforeChange --> AfterChange : successful normal change\nsave D, append C, publish D
+BeforeChange --> AfterChange : successful normal change (C differs from D)\nsave D, append C, publish D
 AfterChange --> AfterUndo : undo\nsave C, publish C, remove C
-AfterUndo --> AfterNewChange : successful normal change\nsave E, append C, publish E
+AfterUndo --> AfterNewChange : successful normal change (C differs from E)\nsave E, append C, publish E
 
 note bottom of AfterChange
 The newest snapshot is restored first.
+Only changed records add a snapshot, after saving succeeds.
 At the 100-snapshot limit, discard the oldest snapshot
 before appending a new predecessor.
 end note
 
 note bottom of AfterUndo
 No forward state D is retained.
+Successful undo shows all students and closes any attendance report.
+Failed saves leave records, filter, report, and history unchanged.
 end note
 @enduml

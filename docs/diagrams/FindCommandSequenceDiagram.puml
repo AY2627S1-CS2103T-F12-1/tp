@@ -5,7 +5,7 @@ participant ":AddressBookParser" as AddressBookParser
 participant ":FindCommandParser" as FindCommandParser
 participant "f:FindCommand" as FindCommand
 participant ":Model" as Model
-participant "predicate:Predicate" as Predicate
+participant "predicate:NameContainsKeywordsPredicate" as Predicate
 
 User -> LogicManager : execute("find n/Alex")
 activate LogicManager
@@ -26,19 +26,31 @@ deactivate FindCommandParser
 AddressBookParser --> LogicManager : f
 deactivate AddressBookParser
 
+note over LogicManager
+Reject find if startup loading failed.
+Otherwise execute on the live model without saving.
+end note
 LogicManager -> FindCommand : execute(model)
 activate FindCommand
 
 FindCommand -> Model : updateFilteredPersonList(predicate)
 activate Model
+loop each student in the complete list
 Model -> Predicate : test(person)
 Predicate --> Model : true/false
+end
+note right of Predicate
+Match any keyword as a case-insensitive substring of the name.
+end note
 Model --> FindCommand
 deactivate Model
 
-FindCommand --> LogicManager : CommandResult
+FindCommand -> Model : getFilteredPersonList().size()
+Model --> FindCommand : matching count
+FindCommand --> LogicManager : CommandResult(Messages.formatStudentsListed(count))
 deactivate FindCommand
 
+LogicManager -> LogicManager : displayedAttendance = null
 LogicManager --> User : result message
 deactivate LogicManager
 @enduml

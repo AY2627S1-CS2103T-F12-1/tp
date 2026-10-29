@@ -17,6 +17,7 @@ Class AttendanceListPanel
 Class AttendanceCard
 Class StatusBarFooter
 Class CommandBox
+Class WindowPlacement
 }
 
 package Model <<Rectangle>> {
@@ -36,7 +37,8 @@ MainWindow *-down->  "1" CommandBox
 MainWindow *-down-> "1" ResultDisplay
 MainWindow *-down-> "1" PersonListPanel
 MainWindow *-down-> "1" StatusBarFooter
-MainWindow --> "0..1" HelpWindow
+MainWindow *--> "1" HelpWindow
+MainWindow ..> WindowPlacement : fitToScreen
 
 PersonListPanel -down-> "*" PersonCard
 MainWindow ..> AttendanceListPanel : <<create>>

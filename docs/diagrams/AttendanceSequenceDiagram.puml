@@ -38,6 +38,7 @@ deactivate AddressBookParser
 
 note over LogicManager
 Read-only: run on the live model without saving.
+Reject attendance if startup loading failed.
 end note
 LogicManager -> AttendanceCommand : execute(live)
 activate AttendanceCommand
@@ -76,6 +77,8 @@ deactivate AddressBookParser
 
 note over LogicManager
 Modifying: run on a pending copy of the live model.
+Reject mark if startup loading failed.
+Capture previousAddressBook and copy records, preferences, and filter.
 end note
 LogicManager -> MarkCommand : execute(pending)
 activate MarkCommand
@@ -88,10 +91,17 @@ deactivate MarkCommand
 
 LogicManager -> Storage : saveAddressBook(pending.getAddressBook())
 activate Storage
+note right of Storage
+Lock, write temporary JSON, check external changes,
+then replace atomically.
+Save errors distinguish external changes, another writer,
+storage location failure, and general I/O failure.
+end note
 alt save succeeds
 Storage --> LogicManager : saved
-deactivate Storage
+LogicManager -> LogicManager : recordUndoSnapshot(previousAddressBook, pending records)
 LogicManager -> LiveModel : setAddressBook(pending.getAddressBook())
+LogicManager -> LiveModel : updateFilteredPersonList(pending filter)
 LogicManager -> AttendanceReport : of(students, displayed date, displayed group)
 activate AttendanceReport
 AttendanceReport --> LogicManager : refreshed report
@@ -101,15 +111,14 @@ LogicManager --> MainWindow : result.withAttendanceReport(refreshed report)
 MainWindow -> MainWindow : show AttendanceListPanel(refreshed report)
 [<-- MainWindow
 else save fails
-activate Storage
-Storage --> LogicManager : IOException
-deactivate Storage
-LogicManager --> MainWindow : CommandException("Unable to save student data.")
+Storage --> LogicManager : IOException (save error)
+LogicManager --> MainWindow : CommandException (mapped save error)
 note over MainWindow
-The displayed report and live records are unchanged.
+The displayed report, live records, filter, and undo history are unchanged.
 end note
 [<-- MainWindow
 end
+deactivate Storage
 deactivate LogicManager
 deactivate MainWindow
 @enduml

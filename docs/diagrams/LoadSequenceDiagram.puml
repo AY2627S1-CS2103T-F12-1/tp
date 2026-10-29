@@ -32,6 +32,8 @@ JsonAddressBookStorage -> JsonSerializableAddressBook : toModelType()
 activate JsonSerializableAddressBook
 note right of JsonSerializableAddressBook
 Convert records in file order.
+Validate fields, labels, and attendance;
+reject duplicate Student IDs.
 end note
 JsonSerializableAddressBook --> JsonAddressBookStorage : addressBook
 deactivate JsonSerializableAddressBook
@@ -59,6 +61,11 @@ end note
 end
 deactivate JsonAddressBookStorage
 deactivate StorageManager
+
+note over JsonAddressBookStorage
+On a successful read (including a missing file), remember
+the file contents for external-change checks during saves.
+end note
 
 create ModelManager
 MainApp -> ModelManager : new ModelManager(initialData, userPrefs)

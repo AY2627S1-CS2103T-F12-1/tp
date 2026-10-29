@@ -66,20 +66,30 @@ deactivate AddCommand
 LogicManager -> Storage : saveAddressBook(pending.getAddressBook())
 activate Storage
 note right of Storage
-Write temporary JSON, then atomically replace data file.
+Lock, write temporary JSON, check external changes,
+then replace atomically.
 end note
 alt save succeeds
 Storage --> LogicManager : saved
+LogicManager -> LogicManager : recordUndoSnapshot(previousAddressBook, pending records)
 LogicManager -> LiveModel : setAddressBook(pending.getAddressBook())
 LogicManager -> LiveModel : updateFilteredPersonList(pending filter)
 [<-- LogicManager : result
 else save fails
-Storage --> LogicManager : IOException
+Storage --> LogicManager : IOException (save error)
 note over LiveModel
 Existing records and filter remain unchanged.
 end note
-[<-- LogicManager : CommandException("Unable to save student data.")
+[<-- LogicManager : CommandException (mapped save error)
 end
 deactivate Storage
+note over LogicManager
+Capture previousAddressBook before command execution.
+Retain it after saving only if records changed (maximum 100 snapshots).
+Close any displayed attendance report on success.
+On failure, preserve undo history and the displayed report.
+Map external changes, another writer, storage location,
+and general I/O failures to their respective error messages.
+end note
 deactivate LogicManager
 @enduml

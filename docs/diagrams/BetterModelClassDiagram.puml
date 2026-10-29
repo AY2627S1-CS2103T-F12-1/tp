@@ -4,6 +4,8 @@ skinparam arrowThickness 1.1
 skinparam arrowColor MODEL_COLOR
 skinparam classBackgroundColor MODEL_COLOR
 
+title Alternative design (not implemented)
+
 AddressBook *-right-> "1" UniquePersonList
 AddressBook *-right-> "1" UniqueLabelList
 UniqueLabelList -[hidden]down- UniquePersonList
@@ -17,4 +19,6 @@ Person *--> Name
 Person *--> StudentId
 Person *--> Email
 Person *--> Remark
+Person *--> "*" AttendanceRecord
+AttendanceRecord --> "1" Label : group
 @enduml

@@ -39,6 +39,7 @@ deactivate AddressBookParser
 note over LogicManager, LiveModel
 ListCommand is read-only, so it executes on the live model
 without creating a temporary model or saving student data.
+Reject list if startup loading failed.
 end note
 LogicManager -> ListCommand : execute(liveModel)
 activate ListCommand
@@ -63,6 +64,7 @@ else student list is not empty
 end
 deactivate ListCommand
 
+LogicManager -> LogicManager : displayedAttendance = null
 [<-- LogicManager : result
 deactivate LogicManager
 @enduml

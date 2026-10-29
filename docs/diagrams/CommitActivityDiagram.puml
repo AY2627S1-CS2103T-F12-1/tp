@@ -2,17 +2,41 @@
 skin rose
 skinparam ActivityFontSize 15
 skinparam ArrowFontSize 12
+title LogicManager: normal modifying command (undo handled separately)
 start
-:User executes command;
-
-'Since the beta syntax does not support placing the condition outside the
-'diamond we place it as the true branch instead.
-
-if () then ([command commits AddressBook])
-    :Purge redundant states;
-    :Save AddressBook to
-    addressBookStateList;
-else ([else])
+:Parse command;
+if (Startup loading failed?) then (yes)
+    :Throw CommandException;
+    stop
 endif
+:Copy live AddressBook as previousAddressBook;
+:Create pending ModelManager with current records,
+preferences, and filter;
+:Execute command against pending model;
+if (Command succeeds?) then (yes)
+else (no)
+    :Propagate CommandException;
+    stop
+endif
+:Save pending records using Storage;
+if (Save succeeds?) then (yes)
+else (no)
+    :Map save error to CommandException;
+    :Keep live records, filter, history, and report;
+    stop
+endif
+if (Student records changed?) then (yes)
+    if (100 snapshots retained?) then (yes)
+        :Discard oldest snapshot;
+    endif
+    :Append previousAddressBook to undoHistory;
+endif
+:Publish pending records and filter to live model;
+if (Attendance changed and a report is open?) then (yes)
+    :Refresh displayed report and attach it to result;
+else (no)
+    :Clear displayedAttendance;
+endif
+:Return CommandResult;
 stop
 @enduml

@@ -1,14 +1,24 @@
 @startuml
 hide circle
 skinparam classAttributeIconSize 0
-
-Class "<<interface>>\nParser" as Parser
-Class RemarkCommandParser {
-  +parse(): RemarkCommand
+title Remarks are parsed as part of add and edit
+interface "Parser<T>" as Parser {
+  +parse(args: String): T
 }
-Class ParserException
-
-RemarkCommandParser .up.|> Parser
-Parser .right.> ParserException: throws >
-RemarkCommandParser .right.> ParserException: throws >
+class AddCommandParser {
+  +parse(args: String): AddCommand
+}
+class EditCommandParser {
+  +parse(args: String): EditCommand
+}
+class ParserUtil {
+  +{static} parseRemark(remark: String): Remark
+}
+class ParseException
+AddCommandParser .up.|> Parser
+EditCommandParser .up.|> Parser
+Parser ..> ParseException : throws
+AddCommandParser ..> ParserUtil
+EditCommandParser ..> ParserUtil
+ParserUtil ..> ParseException : throws
 @enduml

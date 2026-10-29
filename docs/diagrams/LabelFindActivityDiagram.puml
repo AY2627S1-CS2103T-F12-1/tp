@@ -13,14 +13,22 @@ else (no)
     stop
 endif
 
-:FindCommand applies label predicate;
+if (Student data available after startup?) then (yes)
+else (no)
+    :Show data unavailable error;
+    stop
+endif
+
+:FindCommand applies complete, case-insensitive label predicate;
 :Model updates filtered person list;
 
 if (Any matching students?) then (yes)
     :Show number of matching students;
 else (no)
-    :Show 0 person(s) listed!;
+    :Show "0 students listed.";
 endif
+
+:Close any displayed attendance report;
 
 stop
 @enduml

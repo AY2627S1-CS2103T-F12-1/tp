@@ -19,6 +19,8 @@ Class LogicManager
 
 package Model {
 Class HiddenModel #FFFFFF
+Class "AddressBook" as UndoSnapshot MODEL_COLOR
+Class "AttendanceReport" as AttendanceReport MODEL_COLOR
 }
 
 package Storage {
@@ -36,6 +38,9 @@ LogicManager .left.> Command : <<call>>
 
 LogicManager --> Model
 LogicManager --> Storage
+LogicManager *--> "0..100" UndoSnapshot : undoHistory
+LogicManager --> "0..1" AttendanceReport : displayedAttendance
+CommandResult --> "0..1" AttendanceReport
 Storage --[hidden] Model
 Command .[hidden]up.> Storage
 Command .right.> Model

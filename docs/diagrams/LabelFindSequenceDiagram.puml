@@ -5,7 +5,7 @@ participant ":AddressBookParser" as AddressBookParser
 participant ":FindCommandParser" as FindCommandParser
 participant "f:FindCommand" as FindCommand
 participant ":Model" as Model
-participant "predicate:Predicate" as Predicate
+participant "predicate:LabelMatchesPredicate" as Predicate
 
 User -> LogicManager : execute("find l/Discrete Math Tutorial")
 activate LogicManager
@@ -15,25 +15,42 @@ activate AddressBookParser
 
 AddressBookParser -> FindCommandParser : parse(" l/Discrete Math Tutorial")
 activate FindCommandParser
+note right of FindCommandParser
+Validate exactly one non-empty search parameter.
+Parse the complete label with ParserUtil.parseLabel().
+Create LabelMatchesPredicate and FindCommand.
+end note
 FindCommandParser --> AddressBookParser : f
 deactivate FindCommandParser
 
 AddressBookParser --> LogicManager : f
 deactivate AddressBookParser
 
+note over LogicManager
+Reject find if startup loading failed.
+Otherwise execute on the live model without saving.
+end note
 LogicManager -> FindCommand : execute(model)
 activate FindCommand
 
 FindCommand -> Model : updateFilteredPersonList(predicate)
 activate Model
+loop each student in the complete list
 Model -> Predicate : test(person)
 Predicate --> Model : true/false
+end
+note right of Predicate
+Match the complete label name ignoring case (Locale.ROOT).
+end note
 Model --> FindCommand
 deactivate Model
 
-FindCommand --> LogicManager : CommandResult
+FindCommand -> Model : getFilteredPersonList().size()
+Model --> FindCommand : matching count
+FindCommand --> LogicManager : CommandResult(Messages.formatStudentsListed(count))
 deactivate FindCommand
 
+LogicManager -> LogicManager : displayedAttendance = null
 LogicManager --> User : result message
 deactivate LogicManager
 @enduml

@@ -24,6 +24,14 @@ deactivate UndoParser
 Parser --> Logic : UndoCommand
 deactivate Parser
 
+note over Logic
+Reject undo if startup loading failed.
+LogicManager handles undo directly;
+UndoCommand.execute(model) is not called.
+Save errors map to messages for external changes,
+another writer, storage location, or general I/O failure.
+end note
+
 alt no retained snapshot
     Logic --> User : CommandResult("Nothing to undo.")
 else retained snapshot exists
@@ -31,20 +39,23 @@ else retained snapshot exists
     activate Storage
     alt save succeeds
         Storage --> Logic : saved
-        deactivate Storage
         Logic -> Live : setAddressBook(latestSnapshot)
         Logic -> Live : updateFilteredPersonList(showAll)
         Logic -> Logic : remove latest snapshot
         Logic --> User : CommandResult("Undid last change.")
     else save fails
-        Storage --> Logic : IOException or DataStorageLocationException
-        deactivate Storage
+        Storage --> Logic : IOException (save error)
         note over Live
         Live records and the displayed list are unchanged.
         The retained snapshot is not removed.
         end note
         Logic --> User : CommandException
     end
+    deactivate Storage
 end
+note over Logic
+On a successful result, close any displayed attendance report.
+On failure, keep the report and history unchanged.
+end note
 deactivate Logic
 @enduml

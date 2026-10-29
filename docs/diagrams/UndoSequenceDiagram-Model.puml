@@ -1,23 +1,36 @@
 @startuml
 !include style.puml
 skinparam ArrowFontStyle plain
-
-box Model MODEL_COLOR_T1
-participant ":Model" as Model MODEL_COLOR
-participant ":VersionedAddressBook" as VersionedAddressBook MODEL_COLOR
-end box
-
-[-> Model : undoAddressBook()
-activate Model
-
-Model -> VersionedAddressBook : undo()
-activate VersionedAddressBook
-
-VersionedAddressBook -> VersionedAddressBook :resetData(ReadOnlyAddressBook)
-VersionedAddressBook --> Model :
-deactivate VersionedAddressBook
-
-[<-- Model
-deactivate Model
-
+title Undo: save snapshot before publishing to the model
+participant ":LogicManager" as Logic LOGIC_COLOR
+participant "live:ModelManager" as Model MODEL_COLOR
+participant ":Storage" as Storage STORAGE_COLOR
+[-> Logic : executeUndo()
+activate Logic
+note over Logic
+Assumes startup loading succeeded and undoHistory is non-empty.
+Snapshots belong to LogicManager, not the model.
+end note
+Logic -> Logic : previousAddressBook = undoHistory.getLast()
+Logic -> Storage : saveAddressBook(previousAddressBook)
+activate Storage
+alt save succeeds
+    Storage --> Logic : saved
+    Logic -> Model : setAddressBook(previousAddressBook)
+    activate Model
+    Model -> Model : addressBook.resetData(previousAddressBook)
+    Model --> Logic
+    deactivate Model
+    Logic -> Model : updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS)
+    Logic -> Logic : undoHistory.removeLast()
+    [<-- Logic : CommandResult("Undid last change.")
+else save fails
+    Storage --> Logic : IOException
+    note over Logic, Model
+    Keep live data, filter, and undo history unchanged.
+    end note
+    [<-- Logic : CommandException
+end
+deactivate Storage
+deactivate Logic
 @enduml

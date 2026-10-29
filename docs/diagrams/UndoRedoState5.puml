@@ -1,22 +1,20 @@
 @startuml
 !include style.puml
+show members
 skinparam ClassFontColor #000000
 skinparam ClassBorderColor #000000
 skinparam ClassBackgroundColor #FFFFAA
-
-title After command "clear"
-
-package States <<rectangle>> {
-    class State1 as "<u>ab0:AddressBook</u>"
-    class State2 as "<u>ab1:AddressBook</u>"
-    class State3 as "<u>ab3:AddressBook</u>"
+title After clear (assuming ab1 is non-empty)
+object "live:AddressBook" as Live {
+    records = ab3
 }
-
-State1 -[hidden]right-> State2
-State2 -[hidden]right-> State3
-
-class Pointer as "Current State" #FFFFFF
-
-Pointer -up-> State3
-note right on link: State ab2 deleted.
-@end
+object "LogicManager.undoHistory" as History {
+    oldest to newest = ab0, ab1
+}
+Live -[hidden]right-> History
+note bottom of History
+Only predecessor snapshots are retained (maximum 100).
+Undo consumes the newest snapshot; no redo state is retained.
+History changes only after a successful save of changed records.
+end note
+@enduml

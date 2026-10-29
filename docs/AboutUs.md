@@ -57,5 +57,5 @@ For TeachAssist questions and bug reports, use the [project issue tracker](https
 [[github](https://github.com/DaRealTristan)]
 [[portfolio](team/darealtristan.md)]
 
-* Role: Code Quality
-* Responsibilities: Storage
+* Role: Developer
+* Responsibilities: Student find + unmark command and command documentation
