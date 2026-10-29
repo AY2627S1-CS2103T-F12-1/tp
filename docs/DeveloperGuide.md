@@ -537,8 +537,7 @@ shows the save-success and save-failure paths.
 * `MainAppTest` loads a data file without `attendance`, marks students, restarts through the normal startup path,
   and checks the saved attendance and duplicate-mark check.
 * `AttendanceListPanelTest` lays out the panel and checks its title, totals, members, and Present and Absent badges.
-  JavaFX tests share a confirmed toolkit startup and fail explicitly if startup fails or times out. The Linux CI job,
-  which uploads coverage, runs under `xvfb-run` so that JavaFX tests have a virtual display.
+  The Linux CI job, which uploads coverage, runs under `xvfb-run` so that JavaFX tests have a virtual display.
 
 ### Loading student data at startup
 
