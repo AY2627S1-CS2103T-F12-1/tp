@@ -90,14 +90,14 @@ public class EditCommand extends Command {
         Person editedPerson = createEditedPerson(personToEdit, editPersonDescriptor);
 
         if (!personToEdit.isSamePerson(editedPerson) && model.hasPerson(editedPerson)) {
-            logger.warning("Edit rejected: duplicate student ID " + editedPerson.getStudentId() + ".");
+            logger.warning("Edit rejected: duplicate student ID.");
             throw new CommandException(MESSAGE_DUPLICATE_PERSON);
         }
 
         model.setPerson(personToEdit, editedPerson);
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         assert model.hasPerson(editedPerson);
-        logger.info("Edited student ID " + targetStudentId + ".");
+        logger.info("Edited student.");
         return new CommandResult(String.format(MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson)));
     }
 
@@ -112,7 +112,7 @@ public class EditCommand extends Command {
                 .filter(person -> person.getStudentId().equals(targetStudentId))
                 .findFirst()
                 .orElseThrow(() -> {
-                    logger.warning("Edit rejected: student ID " + targetStudentId + " not found.");
+                    logger.warning("Edit rejected: student not found.");
                     return new CommandException(String.format(MESSAGE_STUDENT_NOT_FOUND, targetStudentId));
                 });
     }
@@ -171,8 +171,7 @@ public class EditCommand extends Command {
 
         for (Label labelToRemove : toRemove) {
             Label existingLabel = findMatchingLabel(labels, labelToRemove).orElseThrow(() -> {
-                logger.warning("Edit rejected: label " + labelToRemove.labelName + " not found for "
-                        + studentId + ".");
+                logger.warning("Edit rejected: label not assigned to student.");
                 return new CommandException(String.format(MESSAGE_LABEL_NOT_FOUND,
                         studentId, labelToRemove.labelName));
             });
@@ -188,8 +187,7 @@ public class EditCommand extends Command {
 
         for (Label labelToAdd : toAdd) {
             if (findMatchingLabel(labels, labelToAdd).isPresent()) {
-                logger.warning("Edit rejected: duplicate label " + labelToAdd.labelName + " for "
-                        + studentId + ".");
+                logger.warning("Edit rejected: duplicate label.");
                 throw new CommandException(String.format(MESSAGE_DUPLICATE_LABEL,
                         studentId, labelToAdd.labelName));
             }
