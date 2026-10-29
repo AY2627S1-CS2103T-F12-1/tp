@@ -48,6 +48,17 @@ public class JsonSerializableAddressBookTest {
     }
 
     @Test
+    public void toModelType_paddedDuplicateStudentIds_throwsIllegalValueException() {
+        // EP: Student IDs differing only in surrounding Unicode spaces and case identify the same student.
+        JsonSerializableAddressBook addressBook = new JsonSerializableAddressBook(List.of(
+                new JsonAdaptedPerson("Alice", "A1234567B", "alice@example.com", List.of(), ""),
+                new JsonAdaptedPerson("Bob", "\u00a0\ta1234567b\n\u3000", "bob@example.com", List.of(), "")));
+        assertThrows(IllegalValueException.class,
+                String.format(JsonSerializableAddressBook.MESSAGE_DUPLICATE_STUDENT_ID, "A1234567B"),
+                addressBook::toModelType);
+    }
+
+    @Test
     public void toModelType_nullPerson_throwsIllegalValueException() {
         List<JsonAdaptedPerson> persons = new ArrayList<>();
         persons.add(null);

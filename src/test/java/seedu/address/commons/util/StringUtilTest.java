@@ -1,5 +1,6 @@
 package seedu.address.commons.util;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
@@ -9,6 +10,57 @@ import java.io.FileNotFoundException;
 import org.junit.jupiter.api.Test;
 
 public class StringUtilTest {
+
+    @Test
+    public void trimSpaces_preservesInternalCharacters() {
+        String text = "Meet\u00a0at\u2009\u202f2pm\nNext\u3000week\u115f!";
+        String padding = " \t\r\n\u00a0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007"
+                + "\u2008\u2009\u200a\u202f\u205f\u3000\u115f\u1160\u3164\uffa0";
+        assertEquals(text, StringUtil.trimSpaces(padding + text + padding));
+        assertEquals(text, StringUtil.trimSpaces(text));
+        assertEquals("", StringUtil.trimSpaces(padding));
+        assertEquals("", StringUtil.trimSpaces(""));
+        assertEquals("\u200btext\ufeff", StringUtil.trimSpaces("\u200btext\ufeff"));
+        assertThrows(NullPointerException.class, () -> StringUtil.trimSpaces(null));
+    }
+
+    @Test
+    public void normaliseSpaces_unicodeSeparators_returnsAsciiSpaces() {
+        // EP: Every Unicode space separator, including non-breaking spaces, is an ordinary space.
+        String separators = " \u00a0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007"
+                + "\u2008\u2009\u200a\u202f\u205f\u3000";
+        assertEquals(" ".repeat(separators.length()), StringUtil.normaliseSpaces(separators));
+        assertEquals("A  B", StringUtil.normaliseSpaces("A\u00a0\u2009B"));
+    }
+
+    @Test
+    public void normaliseSpaces_hangulFillers_returnsAsciiSpaces() {
+        // EP: Hangul leading, vowel, compatibility, and halfwidth fillers are treated as blank spaces.
+        for (String filler : new String[] {"\u115f", "\u1160", "\u3164", "\uffa0"}) {
+            // BVA: One filler maps to exactly one space; repeated fillers retain their count.
+            assertEquals(" ", StringUtil.normaliseSpaces(filler));
+            assertEquals("A  B", StringUtil.normaliseSpaces("A" + filler + filler + "B"));
+            assertEquals(" \uac00 ", StringUtil.normaliseSpaces(filler + "\uac00" + filler));
+        }
+    }
+
+    @Test
+    public void normaliseSpaces_otherCharacters_preservesText() {
+        // EP: Control whitespace, Unicode line separators, zero-width spaces, BOMs, and other text are preserved.
+        String text = "Hello\tworld\r\n\u2028\u2029\u200b\ufeff\ud83d\ude00";
+        assertEquals(text, StringUtil.normaliseSpaces(text));
+        // BVA: Zero characters is valid; null is outside the accepted input partition.
+        assertEquals("", StringUtil.normaliseSpaces(""));
+        assertThrows(NullPointerException.class, () -> StringUtil.normaliseSpaces(null));
+    }
+
+    @Test
+    public void contains_unicodeSpaces_matchesAsciiSpaces() {
+        // EP: Search text and query words treat Unicode and ASCII spaces equivalently.
+        assertTrue(StringUtil.containsWordIgnoreCase("Alice\u00a0Pauline", "\u202fPauline\u3000"));
+        assertTrue(StringUtil.containsIgnoreCase("Follow\u2009up", "follow up"));
+        assertTrue(StringUtil.containsIgnoreCase("Follow up", "follow\u00a0up"));
+    }
 
     //---------------- Tests for isNonZeroUnsignedInteger --------------------------------------
 
