@@ -46,7 +46,9 @@ public class AttendanceListPanel extends UiPart<Region> {
                 setGraphic(null);
                 setText(null);
             } else {
-                setGraphic(new AttendanceCard(entry, getIndex() + 1).getRoot());
+                Region card = new AttendanceCard(entry, getIndex() + 1).getRoot();
+                card.prefWidthProperty().bind(widthProperty());
+                setGraphic(card);
             }
         }
     }

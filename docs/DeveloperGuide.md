@@ -266,7 +266,8 @@ The command parser tests cover parameter validation, and `AddressBookParserTest`
 
 Command format: `add n/NAME i/STUDENT_ID e/EMAIL [r/REMARK] [l/LABEL_NAME]`.
 One optional group label can be assigned during add; `Label` defines its validation rules.
-The accepted values and exact error messages are documented in the [User Guide](UserGuide.md#adding-a-student-add).
+Accepted values are documented in the [UG field rules](UserGuide.md#field-rules); exact messages and validation order
+are in [Appendix: Errors](#appendix-errors).
 
 #### Validation and identity
 
@@ -330,9 +331,10 @@ Read-only commands such as `find`, `list`, `help`, and `exit` execute on the liv
 #### Startup and feedback
 
 `MainApp` starts empty when the data file is missing. If loading fails, it creates an empty model and configures
-`LogicManager` to block modifying commands until the file is fixed and the application is restarted.
+`LogicManager` to block modifying commands, `list`, `find`, and `attendance` until the file is fixed and the application
+is restarted.
 The error is `Student data is unavailable because loading failed. Fix the data file and restart.`
-This prevents an empty model from overwriting unreadable or invalid records. Read-only commands remain available.
+This prevents an empty model from overwriting unreadable or invalid records. `help` and `exit` remain available.
 
 Successful adds display `Added student ID: NAME.`, followed by ` Remark: TEXT` when the remark is non-empty,
 and the total student count on the next line. The count uses the complete record list.
@@ -352,7 +354,8 @@ records, and active filter remain unchanged. They also check temporary-file clea
 Command format: `find n/KEYWORD [MORE_KEYWORDS]...`, `find i/KEYWORD [MORE_KEYWORDS]...`,
 `find e/KEYWORD [MORE_KEYWORDS]...`, `find r/KEYWORD [MORE_KEYWORDS]...`, or `find l/LABEL_NAME`.
 Supply exactly one search field. Label searches replace the former standalone filter command.
-See the [User Guide](UserGuide.md#finding-students-by-name-student-id-email-remark-or-label-find) for examples and errors.
+See the [User Guide](UserGuide.md#finding-students-by-name-student-id-email-remark-or-label-find) for examples and
+[Find errors](#find-errors) for error messages and validation order.
 
 #### Validation and matching
 
@@ -534,13 +537,12 @@ shows the save-success and save-failure paths.
 * `MainAppTest` loads a data file without `attendance`, marks students, restarts through the normal startup path,
   and checks the saved attendance and duplicate-mark check.
 * `AttendanceListPanelTest` lays out the panel and checks its title, totals, members, and Present and Absent badges.
-  It is skipped where JavaFX cannot start. The Linux CI job, which uploads coverage, runs under `xvfb-run` so that
-  JavaFX tests have a virtual display.
+  The Linux CI job, which uploads coverage, runs under `xvfb-run` so that JavaFX tests have a virtual display.
 
 ### Loading student data at startup
 
-The startup messages and the commands available after a failed load are documented in the
-[User Guide](UserGuide.md#loading-the-data).
+Commands available after a failed load are documented in the [User Guide](UserGuide.md#loading-the-data).
+Exact startup messages and data-file rules are in [Loading errors](#loading-errors).
 
 #### Loading and error reporting
 
@@ -572,16 +574,17 @@ each outcome.
 
 <puml src="diagrams/LoadSequenceDiagram.puml" alt="Loading student data at startup" />
 
-#### Blocking modifications after a failed load
+#### Blocking student-data commands after a failed load
 
 When loading fails, `MainApp` starts with an empty `AddressBook` and passes `isStudentDataAvailable = false` to
 `LogicManager`. `LogicManager#execute` parses each command first, so malformed commands still receive their usual
-error messages. It then rejects any command whose `Command#isModifyingData` returns true with
+error messages. It then rejects modifying commands (including `undo`), `list`, `find`, and `attendance` with
 `Student data is unavailable because loading failed. Fix the data file and restart.`
 
 This prevents the empty in-memory list from being saved over the user's data file, which may still be recoverable.
-Read-only commands, such as `list` and `find`, still run against the empty list. Restarting is the only way
-to retry loading.
+`list`, `find`, and `attendance` are blocked because the empty fallback model is not a successfully loaded dataset.
+`help` and `exit` remain available. A missing file or a successfully loaded empty file still permits student-data
+commands and genuine zero-total attendance reports. After fixing the file, restart to retry loading.
 
 Saving is described in [Saving before publishing changes](#saving-before-publishing-changes).
 
@@ -589,7 +592,7 @@ Saving is described in [Saving before publishing changes](#saving-before-publish
 
 **Aspect: What to do when the data file cannot be loaded**
 
-* **Alternative 1 (current choice):** Start with an empty list, keep the file, and block modifying commands.
+* **Alternative 1 (current choice):** Start with an empty list, keep the file, and block commands that change or query student data.
   * Pros: The user's data file is never overwritten, and the user sees why loading failed.
   * Cons: The app cannot be used to change records until the file is fixed.
 * **Alternative 2:** Start with an empty list and allow modifying commands, as in AddressBook-Level3.
@@ -599,7 +602,8 @@ Saving is described in [Saving before publishing changes](#saving-before-publish
 #### Verification
 
 `MainAppTest` covers a missing file, files with zero, one, and several students, a corrupted file, and duplicate Student
-IDs. It checks that modifying commands are blocked and the file is unchanged after a failed load.
+IDs. It checks that modifying commands and student-data queries are blocked and the file is unchanged after a failed
+load. Missing files and successfully loaded empty files remain usable.
 `JsonAddressBookStorageTest` covers unreadable files, invalid JSON, invalid values, and duplicate Student IDs.
 
 ### Undoing data changes
@@ -611,6 +615,8 @@ History begins empty on every application start and is never written to JSON.
 Before a normal data-changing command runs, `LogicManager` copies the live address book. It executes the command on
 the existing pending model and saves that proposed address book. Only after the save succeeds does it append the
 pre-change snapshot, discarding the oldest snapshot first when the deque is full, and publish the pending model.
+If the saved address book equals the snapshot, as for `clear` on an empty list, no snapshot is appended, so `undo`
+never reports a change it cannot show.
 Thus parsing, validation, execution, or save failures leave the live records and undo history unchanged.
 
 For `undo`, `LogicManager` examines the newest snapshot without removing it. It saves that snapshot before replacing
@@ -956,7 +962,7 @@ MSS:
 * 1a1. TeachAssist blocks clearing and asks the TA to fix the data file and restart.
 * Use case ends.
 * 2a. The address book is already empty.
-* 2a1. TeachAssist still saves the empty address book and records an undo snapshot.
+* 2a1. TeachAssist still saves the empty address book, without recording an undo snapshot.
 * Use case resumes at step 3.
 * 2b. Saving fails.
 * 2b1. TeachAssist reports the storage error and preserves the records, view, saved file, and undo history.
@@ -1085,7 +1091,7 @@ the current view, and the contents of `data/addressbook.json` are unchanged.
 | 6 | `undo` | Both complete records are restored and visible. |
 | 7 | `undo 1` | `Invalid command format!` followed by `Usage: undo`; records are unchanged. |
 | 8 | Run `undo` until the list is empty, then once more | The original two adds are reversed; the final response is `Nothing to undo.` |
-| 9 | `clear`, then `undo` | Clearing an empty list succeeds and creates a snapshot; undo reports `Undid last change.` and the list remains empty. |
+| 9 | `clear`, then `undo` | Clearing the empty list succeeds without adding a snapshot; undo reports `Nothing to undo.` because step 8 exhausted the history. The list remains empty. |
 
 The automated tests in `LogicManagerTest` cover eviction at the 100-snapshot history limit and failed-save preservation.
 
@@ -1105,8 +1111,8 @@ failed-replacement scenario, which deliberately introduces an obstruction while 
 
 | Case | Preparation and action | Expected result |
 |------|------------------------|-----------------|
-| Invalid JSON | Back up `data/addressbook.json`, replace its contents with `{`, then launch. Run `list`, then `clear`. | Startup reports corrupted or invalid data. `list` reports `No students found.`; `clear` reports that student data is unavailable. The invalid file remains untouched. Restore the backup and restart to recover both students. |
-| Duplicate ID | Duplicate a complete student object in the JSON `persons` array, then launch. | Startup reports the duplicate Student ID; modifying commands are blocked. Restore the backup and restart. |
+| Invalid JSON | Back up `data/addressbook.json`, replace its contents with `{`, then launch. Run `list`, `find n/Alex`, `attendance d/2026-10-20 l/Tutorial 1`, then `clear`. | Startup reports corrupted or invalid data. Each command reports `Student data is unavailable because loading failed. Fix the data file and restart.`; no empty-list result or attendance report is shown. The invalid file remains untouched. Restore the backup and restart to recover both students. |
+| Duplicate ID | Duplicate a complete student object in the JSON `persons` array, then launch. | Startup reports the duplicate Student ID; modifying commands, `list`, `find`, and `attendance` are blocked. Restore the backup and restart. |
 | Cannot create data folder | In a fresh test folder, create a regular file named `data` beside the JAR. Launch and try a valid add. | `Unable to create data storage location.`; no student is added. Close the app, remove the test obstruction, and restart before retrying. |
 | Failed replacement | In a baseline folder, launch and run `find n/Beth`. While the app remains open, rename `data/addressbook.json` to `addressbook.backup.json` in the same folder. Create a non-empty directory named `addressbook.json` in its place, then run `delete i/A0123456B`. | `Unable to save student data.`; Beth remains the only visible student. `list` still shows both students. The backup file is unchanged. Close the app, remove the test directory, restore the backup filename, and restart. |
 
@@ -1144,14 +1150,288 @@ RAM, disk type, screen settings, dataset, timings, and any failures in the relea
 
 2. Measure three launches from starting the Java process until the window is usable and reports `1000 students loaded.`.
    Each launch should take at most 5 seconds. Retain the original fixture for repeatable runs.
-3. After one warm-up of each operation, measure 20 runs each of `find n/Performance`, `list`,
-   `attendance d/2026-10-20 l/Tutorial 1`, and `edit i/T0000000A r/Performance check`.
-   Time from pressing Enter until both feedback and the resulting view finish updating, using a screen recording
-   or equivalent timing tool. For at least 19 runs per command, the elapsed time should be at most 1 second.
-4. Also measure 20 `mark i/T0000000A d/2026-10-20 l/Tutorial 1` / `undo` pairs after a warm-up pair.
-   Each undo restores the unmarked state so the next mark succeeds. Apply the same 19-of-20 target separately
-   to mark and undo. Outside the timed commands, use `attendance d/2026-10-20 l/Tutorial 1` to verify 100 members,
-   with 1 present and 99 absent after mark, and 0 present and 100 absent after undo.
-5. Scroll to the end of the full student list and confirm that the command box stays usable and no cards are missing.
+3. After one warm-up of each operation, measure 20 runs each of `find n/Performance`, `list`, and
+   `attendance d/2026-10-20 l/Tutorial 1`. Time from pressing Enter until both feedback and the resulting view
+   finish updating, using a screen recording or equivalent timing tool. For at least 19 runs per command, the
+   elapsed time should be at most 1 second.
+4. For `add`, `edit`, `delete`, and `clear`, perform one untimed warm-up run followed by `undo` to restore the
+   initial state. Then run that modifying command 20 times, executing `undo` after each successful run to restore
+   the state needed for the next run. Time the modifying command and each `undo` separately. At least 19 of the
+   20 runs of the modifying command must take at most 1 second. Similarly, at least 19 of the 20 succeeding `undo`
+   commands must take at most 1 second.
+
+   * `add n/Added Performance i/T1000000A e/added@example.com l/Tutorial 1`
+   * `edit i/T0000000A r/Performance check`
+   * `delete i/T0000000A`
+   * `mark i/T0000000A d/2026-10-20 l/Tutorial 1`
+   * `unmark i/T0000000A d/2026-10-01 l/Tutorial 1`
+   * `clear`
+
+   For `mark` and `unmark`, perform separate measurements from the student list and from the corresponding
+   attendance report. For each starting view, perform one untimed warm-up run followed by `undo`, then execute the
+   modifying command 20 times with `undo` after each successful run. Before every warm-up and timed command, use
+   untimed setup to establish the starting view: `list` for the student-list measurement, or the relevant
+   `attendance` command for the attendance-report measurement: `attendance d/2026-10-20 l/Tutorial 1` for mark and
+   `attendance d/2026-10-01 l/Tutorial 1` for unmark. `undo` closes the report, so this setup keeps every timed
+   command in that measurement on the same starting view. Apply the 19-of-20 requirement separately to each
+   starting-view measurement and its corresponding `undo` commands.
+
+   Outside the timed commands, verify that add and delete respectively produce 1001 and 999 students before undo,
+   and 1000 students after undo. Verify that edit changes and restores the remark. For mark, use
+   `attendance d/2026-10-20 l/Tutorial 1` to verify 100 members with 1 present and 99 absent after mark, and
+   0 present and 100 absent after undo. For unmark, use `attendance d/2026-10-01 l/Tutorial 1` to verify 100 present
+   before unmark, 99 present and 1 absent after unmark, and 100 present after undo.
+   Verify that clear produces an empty list and that undo restores all 1000 students.
+5. Also measure representative data-dependent rejected commands. After one untimed warm-up of each, run each command
+   20 times and apply the 19-of-20 requirement. No `undo` is needed because both commands must leave the fixture
+   unchanged.
+
+   * `add n/Performance Student i/T0000999A e/student999@example.com l/Tutorial 10`
+   * `mark i/T9999999A d/2026-10-20 l/Tutorial 1`
+
+   Verify that the first command reports a duplicate Student ID and the second reports a missing student ID, and that
+   the original 1000 students remain unchanged.
+6. After the fixed-state measurements, perform the following stateful sequences. Begin each sequence from the normal
+   student list. Time every command individually.
+   At least 19 of the 20 modifying commands, and at least 19 of the 20 following `undo` commands, must take at most
+   1 second. Verify the stated intermediate state, then verify that all 20 undos restore the original 1000-student
+   fixture before beginning the next sequence.
+
+   * Add 20 students consecutively with IDs `T1000000A` through `T1000019A`, then undo all 20 adds. Verify 1020
+     students before undoing and 1000 afterwards.
+   * Edit 20 different fixture students with a distinct replacement remark, then undo all 20 edits. Verify the
+     edited remarks before undoing and the original remarks afterwards.
+   * Delete 20 different fixture students, then undo all 20 deletes. Verify 980 students before undoing and 1000
+     afterwards.
+   * Mark 20 different fixture students for `2026-10-20`, using each student's existing tutorial label, then undo
+     all 20 marks. Verify that the 20 records are present before undoing and absent afterwards.
+   * Unmark the existing `2026-10-01` attendance records of 20 different fixture students, using each student's
+     existing tutorial label, then undo all 20 unmarks. Verify that the 20 records are absent before undoing and
+     restored afterwards.
+
+   `clear` is excluded from these sequences because a second consecutive clear operates on an already empty list.
+   `help`, `exit`, and syntax or parse failures are excluded because their work does not depend on the 1000-student
+   dataset; functional testing covers those paths.
+7. Scroll to the end of the full student list and confirm that the command box stays usable and no cards are missing.
    Record freezes or rendering errors separately from command timings. A failure requires investigation; this dataset
    does not establish performance for maximum-length remarks or unbounded attendance histories.
+
+## Appendix: Errors
+
+This appendix records error messages, recovery actions, and validation order. For everyday command usage, see the
+[User Guide](UserGuide.md#features). Examples use representative Student IDs, labels, and prefixes; messages substitute
+the relevant values. Only the first detected error is reported. Failed commands preserve student records, the active
+view, undo history, and the saved file. Shared errors below also apply to the command-specific sections.
+
+### General command errors
+
+| Condition | Message | Recovery |
+|-----------|---------|----------|
+| Multiline command | `Invalid command format!` followed by `help: Shows program usage instructions.` and `Example: help` | Enter one command line. |
+| Unknown or incorrectly capitalized command, e.g., `Add` | `Unknown command.` | Use the lowercase command word in the UG. |
+| Unknown alphabetic prefix token, e.g., `x/` | `Unknown parameter: x/.` | Remove the unsupported prefix; this also applies inside remarks. |
+
+The general command parser runs before command-specific validation. Unicode space separators and Hangul fillers
+(`U+115F`, `U+1160`, `U+3164`, `U+FFA0`) count as spacing around commands and prefixes and are trimmed from value
+boundaries. Zero-width spaces and byte order marks are not normalized as whitespace. Internal label and remark
+characters are preserved; name spacing is normalized. See [UG whitespace handling](UserGuide.md#whitespace-and-label-matching).
+
+### Field validation errors
+
+| Condition | Message | Recovery |
+|-----------|---------|----------|
+| Invalid name | `Name must contain 1-100 characters, include a letter, and use only letters, spaces, apostrophes, hyphens, or periods.` | Follow the UG field rules and limits. |
+| Invalid Student ID | `Student ID must contain exactly 9 letters or digits, with no spaces.` | Follow the UG field rules and limits. |
+| Invalid email | `Email must have the form name@example.com and meet the supported email format.` | Follow the UG field rules and limits. |
+| Invalid label | `Label names should be 1 to 60 characters long, contain at least one letter or digit, and only contain letters, digits, spaces, hyphens, underscores, apostrophes, parentheses, and periods.` | Follow the UG field rules and limits. |
+| Oversized remark | `Remark must not exceed 4000 characters.` | Follow the UG field rules and limits. |
+| Invalid date, e.g., `2026-02-30` or `2026-2-03` | `Date must use a valid YYYY-MM-DD date.` | Use a real calendar date with zero-padded month and day. |
+
+The label constraint also applies to attendance groups. Empty edit names and emails produce their field constraint
+messages. Length limits apply after trimming/normalization and count Unicode code points for names, labels, and remarks.
+
+Email validation accepts at most 254 characters and exactly one `@`. The local part has 1–64 ASCII letters, digits,
+periods, underscores, plus signs, or hyphens; it cannot begin/end with a period or contain consecutive periods.
+The domain has at least two dot-separated labels of 1–63 ASCII letters, digits, or hyphens, without boundary hyphens.
+Its final label has 2–63 ASCII letters. Spaces are rejected. Only the domain is lowercased; mailbox existence is not checked.
+
+### Command-specific errors
+
+#### Add errors
+
+| Condition | Message | Recovery |
+|-----------|---------|----------|
+| Text before the first parameter | `Invalid command format. Usage: add n/NAME i/STUDENT_ID e/EMAIL [r/REMARK] [l/LABEL_NAME]` | Follow the command format in the UG. |
+| Repeated parameter, e.g., two `n/` values | `Parameter n/ must be specified only once.` | Keep only the permitted number of parameters. |
+| Missing compulsory parameter | `Missing required parameter: i/.` | Supply the required non-empty value. |
+| Empty compulsory parameter | `Parameter n/ cannot be empty.` | Supply the required non-empty value. |
+| Empty label | `Parameter l/ cannot be empty.` | Supply the required non-empty value. |
+| Duplicate Student ID | `Student ID A0123456B already exists.` | Use a new Student ID, or edit the existing student. |
+
+Validation order: unknown prefixes, preamble, repeated prefixes, missing required prefixes, empty required
+values, empty optional label, then name, Student ID, email, label, and remark constraints. Repeated-prefix checks use
+`n/`, `i/`, `e/`, `r/`, `l/` order; missing/empty required checks use `n/`, `i/`, `e/` order. Data availability is checked
+after parsing, then duplicate Student ID, then saving. For example, `add n/ i/123 e/bad p/123` reports the unknown `p/`
+before the empty name or invalid values.
+
+#### Edit errors
+
+| Condition | Message | Recovery |
+|-----------|---------|----------|
+| Text before the first parameter | `Invalid command format!` followed by the edit usage | Follow the command format in the UG. |
+| Repeated single-value parameter, e.g., two `n/` values | `Multiple values specified for the following single-valued field(s): n/` | Keep only the permitted number of parameters. |
+| Missing Student ID | `Missing required parameter: i/.` | Supply the required non-empty value. |
+| Empty Student ID | `Parameter i/ cannot be empty.` | Supply the required non-empty value. |
+| Invalid Student ID, name, email, remark, or label | The corresponding field constraint message in [Field validation errors](#field-validation-errors); empty `n/` and `e/` also produce these messages | Follow the UG field rules and limits. |
+| No field to change, e.g., `edit i/A0123456B` | `At least one field to edit must be provided.` | Supply at least one field or label change. |
+| Empty label removal | `Parameter dl/ cannot be empty.` | Supply the required non-empty value. |
+| Same label repeated under one prefix | `Parameter l/ repeats label "Tutorial 1".` (or `dl/`, using the repeated value's spelling) | Specify each label only once per prefix. |
+| Empty `l/` combined with another label change | `An empty l/ cannot be combined with other label changes.` | Clear all labels separately from other label changes. |
+| Student does not exist | `Student with ID A0123456B is not in the records.` | Use `list` or `find` to check the Student ID. |
+| Removing a label the student does not have | `Student A0123456B does not have label "Tutorial 1".` | Check the student’s labels and use the matching group name. |
+| Adding a label still present after removals | `Student A0123456B already has label "Tutorial 1".` | Omit the existing label, or remove it before adding its replacement. |
+
+Validation order: unknown prefixes, preamble, duplicate single-value prefixes, required/non-empty/valid
+Student ID, supplied name, email, remark, label changes, then whether any field was supplied. Label additions are parsed
+before removals; an empty `l/` is checked for conflicting changes first. When several single-value prefixes repeat,
+their order in the message is not guaranteed. After parsing, data availability and student existence are checked.
+All label removals execute before additions; saving occurs last.
+
+#### Find errors
+
+| Condition | Message | Recovery |
+|-----------|---------|----------|
+| Extra words before the search parameter | `Invalid command format!` followed by the correct `find` format | Follow the command format in the UG. |
+| Repeated same search parameter | `Parameter n/ must be specified only once.` (or the repeated prefix, such as `l/`) | Keep only the permitted number of parameters. |
+| Missing search parameter | `Missing required parameter: n/, i/, e/, r/, or l/.` | Supply the required non-empty value. |
+| More than one search parameter type | `Parameter n/, i/, e/, r/, or l/ must be specified only once.` | Keep only the permitted number of parameters. |
+| Empty search parameter | `Parameter l/ cannot be empty.` (or the supplied prefix) | Supply the required non-empty value. |
+| Using the removed command, such as `filter l/Tutorial 1` | `Unknown command.` | Use a supported lowercase command and prefix from the UG. |
+
+Validation order: preamble, unknown prefixes, repeated prefixes, missing prefixes, mixed search fields,
+empty value, then label validation where applicable. Data availability is checked after parsing and before searching.
+Name, ID, email, and remark searches normalize Unicode spaces and supported Hangul fillers for matching. Label searches
+preserve internal Unicode spaces and Hangul fillers and compare complete names after `Locale.ROOT` lowercasing.
+
+#### Delete errors
+
+| Condition | Message | Recovery |
+|-----------|---------|----------|
+| Text before the `i/` parameter | `Invalid command format. Usage: delete i/STUDENT_ID` | Follow the command format in the UG. |
+| Repeated Student ID | `Parameter i/ must be specified only once.` | Keep only the permitted number of parameters. |
+| Missing Student ID | `Missing required parameter: i/.` | Supply the required non-empty value. |
+| Empty Student ID | `Parameter i/ cannot be empty.` | Supply the required non-empty value. |
+| Student does not exist | `Student with ID A0123456B is not in the records.` | Use `list` or `find` to check the Student ID. |
+
+Validation order: unknown prefixes, preamble, repeated `i/`, missing `i/`, empty `i/`, invalid Student
+ID, data availability, student existence, then saving. For example, `delete i/123 x/1` reports the unknown prefix first.
+
+#### Mark errors
+
+| Condition | Message | Recovery |
+|-----------|---------|----------|
+| Student does not exist | `Student with ID A0123456B is not in the records.` | Use `list` or `find` to check the Student ID. |
+| Student does not have the group label | `Student A0123456B does not have group label "Tutorial 1".` | Check the student’s labels and use the matching group name. |
+| Attendance already exists | `Student A0123456B is already marked present for Tutorial 1 on 2026-10-20.` | Use `attendance` to check the existing entry; use `unmark` to remove it. |
+
+After parsing, data availability, student existence, current group membership, and existing attendance
+are checked in that order, then saving. Success feedback uses the stored group label’s spelling.
+
+#### Unmark errors
+
+| Condition | Message | Recovery |
+|-----------|---------|----------|
+| Student does not exist | `Student with ID A0123456B is not in the records.` | Use `list` or `find` to check the Student ID. |
+| No attendance entry for the date and group | `Student A0123456B is not marked present for Tutorial 1 on 2026-10-20.` | Check the date and stored group spelling, including internal spacing. |
+
+After parsing, data availability, student existence, and matching attendance are checked, then saving.
+Current group membership is not required. Success feedback uses the attendance entry’s stored group spelling.
+
+#### Attendance parameter errors
+
+The following parsing errors are shared by `mark`, `unmark`, and `attendance`. For `attendance`, omit `i/` and use
+`attendance d/YYYY-MM-DD l/GROUP` as the usage text; `i/` is an unknown parameter.
+
+| Condition | Message | Recovery |
+|-----------|---------|----------|
+| Text before the first parameter | `Invalid command format. Usage: unmark i/STUDENT_ID d/YYYY-MM-DD l/GROUP` (or the corresponding `mark` usage) | Follow the command format in the UG. |
+| Repeated parameter | `Parameter d/ must be specified only once.` | Keep only the permitted number of parameters. |
+| Missing parameter | `Missing required parameter: d/.` | Supply the required non-empty value. |
+| Empty parameter | `Parameter l/ cannot be empty.` | Supply the required non-empty value. |
+| Invalid group name | See the label message in [Field validation errors](#field-validation-errors). | Follow the UG field rules and limits. |
+
+Validation order: unknown prefixes, preamble, repeated prefixes, missing/empty values, then field values.
+Repeated and missing/empty checks use `i/`, `d/`, `l/` order for mark/unmark and `d/`, `l/` for attendance.
+Each required prefix is checked for presence and a non-empty value before moving to the next. Fields are validated in
+Student ID, date, and group order (date and group for attendance). The startup data-availability check follows parsing
+for `mark`, `unmark`, and `attendance`; all three are blocked after a failed load. `attendance` does not save data.
+
+#### List, clear, undo, help, and exit errors
+
+| Condition | Message | Recovery |
+|-----------|---------|----------|
+| Additional non-whitespace input to `list`, `clear`, `undo`, or `exit`, e.g., `list n/Samuel` | `Invalid command format!` followed by `Usage: list` (substitute the command word) | Remove all arguments. |
+| Additional non-whitespace input to `help` | `Invalid command format!` followed by `help: Shows program usage instructions.` and `Example: help` | Enter `help` alone. |
+
+Argument validation precedes the startup data-availability check. `list`, `clear`, and `undo` are blocked after a failed
+load; `help` and `exit` remain available. An empty undo history produces `Nothing to undo.` as successful feedback,
+preserves the current student filter, and closes any attendance view. It does not save data.
+
+### Loading errors
+
+| Condition | Message | Recovery |
+|-----------|---------|----------|
+| File cannot be read, e.g., permission denied | `Unable to load student data.` | Close the app, restore read access or a readable backup, and restart. |
+| Malformed JSON, extra root values/trailing garbage, `null` root, wrong structure, or invalid record | `Unable to load student data. The data file may be corrupted or invalid.` | Close the app, fix or restore the file, and restart. |
+| Duplicate Student ID after normalization | `Unable to load student data: duplicate Student ID A0123456B detected.` | Give each student a unique ID, then restart. |
+| Valid modifying command, `list`, `find`, or `attendance` after startup loading failed | `Student data is unavailable because loading failed. Fix the data file and restart.` | Fix or restore the data file with the app closed, then restart. |
+
+The entire JSON document is deserialized before model validation. `JsonUtil#fromJsonString` uses a Jackson 2.7 parser
+and explicitly checks `nextToken()` after binding the root value; additional tokens or invalid trailing content fail
+loading. Exactly one student-data object is accepted, with optional surrounding JSON whitespace (space, tab, carriage
+return, line feed). A `null` root is rejected. JSON syntax whitespace is distinct from Unicode padding inside strings.
+After deserialization, model conversion checks students in file order, stopping at the first failure. No partial
+student list is published. On failure the file is preserved; `help` and `exit` remain available.
+
+Each student requires valid `name`, `studentId`, and `email` values. Missing/null `remark` becomes empty text;
+missing/null `labels` and `attendance` become empty collections. Legacy `tags` and other unknown properties are ignored
+and are not saved again. Null student, label, or attendance entries are invalid.
+
+The root object contains a `persons` array. For example, this is a valid minimal data file:
+
+```json
+{
+  "persons": [
+    { "name": "Alex Tan", "studentId": "A0123456B", "email": "alex@example.com" }
+  ]
+}
+```
+
+Loading trims surrounding ASCII control whitespace, Unicode space separators, and the four supported Hangul fillers
+from text fields, labels, dates, and attendance groups before validation. Names also normalize these Unicode spaces and
+fillers to ASCII spaces and collapse repeated spaces. Internal remark, label, and attendance-group characters are
+preserved. Student IDs become uppercase; only email domains become lowercase. Limits apply after this normalization.
+Duplicate Student IDs, labels within a student, and attendance date/group pairs within a student are checked after
+normalization; label/group comparison ignores case but preserves internal spacing, Unicode spaces, and Hangul fillers.
+The normalized values are written on the next successful save.
+
+Attendance is stored as `attendance`: a list of `{"date": "2026-10-20", "group": "Tutorial 1"}` entries per student.
+Dates must be real calendar dates in `YYYY-MM-DD` format; group names follow label constraints.
+
+Successful startup reports `N students loaded.` (`1 student loaded.` for one student). A missing file reports
+`No existing student data found. Starting with an empty student list.` and allows normal use.
+
+If main-window initialization fails, an error dialog titled `Fatal error during initializing` shows the exception
+details. Dismissing it exits the application with failure status; this is separate from student-data loading failure.
+
+### Saving errors
+
+| Condition | Message | Recovery |
+|-----------|---------|----------|
+| Storage folder cannot be created | `Unable to create data storage location.` | Use a writable home folder and remove any file obstructing the `data` folder. Retry the command. |
+| Writing or atomic replacement fails, including unsupported atomic replacement | `Unable to save student data.` | Restore writable storage supporting atomic file replacement, then retry. |
+
+Saving occurs after parsing, data-availability checks, and command-specific validation. A complete temporary file is
+written beside the destination, then atomically replaces it. Failures preserve live records, current view, undo history,
+and the previous data file. Successful modifying commands save even if the records are unchanged, but unchanged records
+do not create an undo snapshot. Undo with no history does not save.

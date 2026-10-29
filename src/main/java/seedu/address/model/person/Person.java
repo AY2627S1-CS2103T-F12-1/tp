@@ -33,6 +33,7 @@ public class Person {
      * @param name The non-null student name.
      * @param studentId The non-null student ID.
      * @param email The non-null email address.
+     * @throws NullPointerException if any parameter is null.
      */
     public Person(Name name, StudentId studentId, Email email) {
         this(name, studentId, email, Set.of(), new Remark(""));
@@ -45,6 +46,7 @@ public class Person {
      * @param studentId The non-null student ID.
      * @param email The non-null email address.
      * @param remark The non-null remark.
+     * @throws NullPointerException if any parameter is null.
      */
     public Person(Name name, StudentId studentId, Email email, Remark remark) {
         this(name, studentId, email, Set.of(), remark);
@@ -58,6 +60,7 @@ public class Person {
      * @param email The non-null email address.
      * @param labels The non-null set of labels.
      * @param remark The non-null remark.
+     * @throws NullPointerException if any parameter is null.
      */
     public Person(Name name, StudentId studentId, Email email, Set<Label> labels, Remark remark) {
         this(name, studentId, email, labels, remark, Set.of());
@@ -66,7 +69,13 @@ public class Person {
     /**
      * Constructs a person with the supplied details and attendance records.
      *
+     * @param name The non-null student name.
+     * @param studentId The non-null student ID.
+     * @param email The non-null email address.
+     * @param labels The non-null set of labels.
+     * @param remark The non-null remark.
      * @param attendance The non-null set of attendance records.
+     * @throws NullPointerException if any parameter is null.
      */
     public Person(Name name, StudentId studentId, Email email, Set<Label> labels, Remark remark,
             Set<AttendanceRecord> attendance) {

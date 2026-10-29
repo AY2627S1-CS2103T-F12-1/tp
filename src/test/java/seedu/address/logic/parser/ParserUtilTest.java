@@ -1,9 +1,12 @@
 package seedu.address.logic.parser;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static seedu.address.logic.parser.ParserUtil.MESSAGE_INVALID_DATE;
 import static seedu.address.logic.parser.ParserUtil.MESSAGE_INVALID_INDEX;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
+
+import java.time.LocalDate;
 
 import org.junit.jupiter.api.Test;
 
@@ -27,6 +30,43 @@ public class ParserUtilTest {
     private static final String VALID_LABEL = "Discrete Math Tutorial";
 
     private static final String WHITESPACE = " \t\r\n";
+
+    @Test
+    public void parse_unicodeSpaces_normalisesBeforeValidation() throws Exception {
+        // EP: Unicode padding is trimmed; labels and remarks preserve internal characters.
+        for (String space : new String[] {"\u00a0", "\u2007", "\u2009", "\u202f", "\u3000",
+            "\u115f", "\u1160", "\u3164", "\uffa0"}) {
+            assertEquals(new Name("Rachel Walker"), ParserUtil.parseName(space + "Rachel" + space + "Walker" + space));
+            assertEquals(new StudentId(VALID_STUDENT_ID), ParserUtil.parseStudentId(space + VALID_STUDENT_ID + space));
+            assertEquals(new Email(VALID_EMAIL), ParserUtil.parseEmail(space + VALID_EMAIL + space));
+            assertEquals(new Label("Tutorial" + space + space + "1"),
+                    ParserUtil.parseLabel(space + "Tutorial" + space + space + "1"));
+            assertEquals(new Remark("Follow" + space + "up\nNext week"),
+                    ParserUtil.parseRemark(space + "Follow" + space + "up\nNext week" + space));
+            assertEquals(LocalDate.parse("2026-10-20"), ParserUtil.parseDate(space + "2026-10-20" + space));
+            assertEquals(INDEX_FIRST_PERSON, ParserUtil.parseIndex(space + "1" + space));
+            assertThrows(ParseException.class, () -> ParserUtil.parseStudentId("A012" + space + "3456B"));
+            assertThrows(ParseException.class, () -> ParserUtil.parseEmail("rachel" + space + "@example.com"));
+            assertThrows(ParseException.class, () -> ParserUtil.parseDate("2026-10-" + space + "20"));
+            // BVA: Zero characters after trimming is valid only for the optional remark.
+            assertEquals(new Remark(""), ParserUtil.parseRemark(space));
+            assertThrows(ParseException.class, () -> ParserUtil.parseName(space));
+            assertThrows(ParseException.class, () -> ParserUtil.parseLabel(space));
+            assertThrows(ParseException.class, () -> ParserUtil.parseStudentId(space));
+            assertThrows(ParseException.class, () -> ParserUtil.parseEmail(space));
+            assertThrows(ParseException.class, () -> ParserUtil.parseDate(space));
+            assertThrows(ParseException.class, () -> ParserUtil.parseIndex(space));
+        }
+    }
+
+    @Test
+    public void parseLabel_unicodeSpaces_checksNormalisedLengthBoundaries() throws Exception {
+        // BVA: A label at the maximum length is accepted; one character above it is rejected after normalisation.
+        String label = "a".repeat(Label.MAX_NAME_LENGTH - 2) + "\u00a0b";
+        assertEquals(new Label(label),
+                ParserUtil.parseLabel("\u3000" + label + "\u202f"));
+        assertThrows(ParseException.class, () -> ParserUtil.parseLabel("\u3000" + label + "b\u202f"));
+    }
 
     @Test
     public void parseIndex_invalidInput_throwsParseException() {
@@ -259,6 +299,41 @@ public class ParserUtilTest {
         String labelWithWhitespace = WHITESPACE + VALID_LABEL + WHITESPACE;
         Label expectedLabel = new Label(VALID_LABEL);
         assertEquals(expectedLabel, ParserUtil.parseLabel(labelWithWhitespace));
+    }
+
+    @Test
+    public void parseDate_null_throwsNullPointerException() {
+        // EP: null input
+        assertThrows(NullPointerException.class, () -> ParserUtil.parseDate(null));
+    }
+
+    @Test
+    public void parseDate_invalidFormat_throwsParseException() {
+        // EP: invalid format regex
+        assertThrows(ParseException.class, MESSAGE_INVALID_DATE, () -> ParserUtil.parseDate("2024/05/10"));
+        assertThrows(ParseException.class, MESSAGE_INVALID_DATE, () -> ParserUtil.parseDate("2024-5-1"));
+        assertThrows(ParseException.class, MESSAGE_INVALID_DATE, () -> ParserUtil.parseDate("not-a-date"));
+    }
+
+    @Test
+    public void parseDate_invalidDate_throwsParseException() {
+        // EP: nonexistent calendar date matching regex
+        // BVA: day exceeds February limit
+        assertThrows(ParseException.class, MESSAGE_INVALID_DATE, () -> ParserUtil.parseDate("2024-02-30"));
+        // BVA: month exceeds 12-month limit
+        assertThrows(ParseException.class, MESSAGE_INVALID_DATE, () -> ParserUtil.parseDate("2024-13-01"));
+    }
+
+    @Test
+    public void parseDate_validDateWithoutWhitespace_returnsDate() throws Exception {
+        // EP: valid date without whitespace
+        assertEquals(LocalDate.parse("2024-05-10"), ParserUtil.parseDate("2024-05-10"));
+    }
+
+    @Test
+    public void parseDate_validDateWithWhitespace_returnsDate() throws Exception {
+        // EP: valid date with whitespace
+        assertEquals(LocalDate.parse("2024-05-10"), ParserUtil.parseDate(WHITESPACE + "2024-05-10" + WHITESPACE));
     }
 
 }

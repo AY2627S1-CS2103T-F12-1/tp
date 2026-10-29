@@ -5,6 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 
+import java.util.List;
+import java.util.stream.Stream;
+
 import org.junit.jupiter.api.Test;
 
 public class LabelTest {
@@ -64,5 +67,47 @@ public class LabelTest {
         assertTrue(Label.isValidLabelName("Today's Tutorial"));
         assertTrue(Label.isValidLabelName("Tutorial (Monday)"));
         assertTrue(Label.isValidLabelName("Tutorial 1.2"));
+    }
+
+    @Test
+    public void displayOrder_mixedCase_sortsIgnoringCaseThenByExactName() {
+        // EP: uppercase and lowercase names interleave alphabetically (#209)
+        // Boundary: names differing only by case keep a fixed relative order
+        List<String> sorted = Stream.of("beta", "Zeta", "alpha", "Beta", "Gamma")
+                .map(Label::new)
+                .sorted(Label.DISPLAY_ORDER)
+                .map(label -> label.labelName)
+                .toList();
+
+        assertEquals(List.of("alpha", "Beta", "beta", "Gamma", "Zeta"), sorted);
+    }
+
+    @Test
+    public void equalsIgnoreCase_null_throwsNullPointerException() {
+        Label label = new Label("Tutorial 1");
+        assertThrows(NullPointerException.class, () -> label.equalsIgnoreCase((Label) null));
+        assertThrows(NullPointerException.class, () -> label.equalsIgnoreCase((String) null));
+    }
+
+    @Test
+    public void equalsIgnoreCase_matchingCaseVariations_returnsTrue() {
+        Label label = new Label("Tutorial 1");
+
+        // EP: identical string
+        assertTrue(label.equalsIgnoreCase(new Label("Tutorial 1")));
+        assertTrue(label.equalsIgnoreCase("Tutorial 1"));
+
+        // EP: different casing
+        assertTrue(label.equalsIgnoreCase(new Label("tutorial 1")));
+        assertTrue(label.equalsIgnoreCase("TUTORIAL 1"));
+    }
+
+    @Test
+    public void equalsIgnoreCase_differentLabels_returnsFalse() {
+        Label label = new Label("Tutorial 1");
+
+        // EP: different label
+        assertFalse(label.equalsIgnoreCase(new Label("Tutorial 2")));
+        assertFalse(label.equalsIgnoreCase("Tutorial 2"));
     }
 }

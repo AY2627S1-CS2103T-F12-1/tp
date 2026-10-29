@@ -1,10 +1,13 @@
 package seedu.address;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -14,12 +17,14 @@ import org.junit.jupiter.api.io.TempDir;
 
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.model.Model;
+import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyUserPrefs;
 import seedu.address.model.UserPrefs;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.Storage;
 import seedu.address.storage.StorageManager;
+import seedu.address.testutil.DiagnosticLogCapture;
 import seedu.address.ui.UiManager;
 
 public class MainAppLifecycleTest {
@@ -89,6 +94,42 @@ public class MainAppLifecycleTest {
 
         assertEquals(updatedSettings, storage.readUserPrefs().orElseThrow().getGuiSettings());
         assertEquals(originalData, Files.readString(storage.getAddressBookFilePath()));
+    }
+
+    @Test
+    public void initPrefs_saveFails_keepsDefaultsAndLogsOnlyExceptionType() {
+        MainApp app = new MainApp();
+        try (DiagnosticLogCapture logs = new DiagnosticLogCapture()) {
+            UserPrefs prefs = app.initPrefs(createFailingPreferencesStorage());
+
+            assertEquals(new UserPrefs(), prefs);
+            assertTrue(logs.getOutput().contains("Failed to save preference file: IOException"));
+            assertFalse(logs.getOutput().contains("PrivatePreferenceMarker"));
+        }
+    }
+
+    @Test
+    public void stop_preferencesSaveFails_preservesModelAndLogsOnlyExceptionType() {
+        MainApp app = new MainApp();
+        app.model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
+        app.storage = new StorageManager(new JsonAddressBookStorage(temporaryFolder.resolve("students.json")),
+                createFailingPreferencesStorage());
+        try (DiagnosticLogCapture logs = new DiagnosticLogCapture()) {
+            app.stop();
+
+            assertEquals(getTypicalAddressBook(), app.model.getAddressBook());
+            assertTrue(logs.getOutput().contains("Failed to save preferences: IOException"));
+            assertFalse(logs.getOutput().contains("PrivatePreferenceMarker"));
+        }
+    }
+
+    private JsonUserPrefsStorage createFailingPreferencesStorage() {
+        return new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json")) {
+            @Override
+            public void saveUserPrefs(ReadOnlyUserPrefs userPrefs) throws IOException {
+                throw new IOException("PrivatePreferenceMarker");
+            }
+        };
     }
 
     private Storage createStorage() {

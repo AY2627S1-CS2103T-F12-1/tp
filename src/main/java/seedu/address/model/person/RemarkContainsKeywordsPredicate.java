@@ -13,12 +13,13 @@ public class RemarkContainsKeywordsPredicate implements Predicate<Person> {
     private final List<String> keywords;
 
     /**
-     * Constructs a {@code RemarkContainsKeywordsPredicate} with the given keywords.
+     * Constructs a {@code RemarkContainsKeywordsPredicate} with an immutable snapshot of the given keywords.
      *
      * @param keywords Keywords to match against a person's remark.
+     * @throws NullPointerException if the list or any keyword is null.
      */
     public RemarkContainsKeywordsPredicate(List<String> keywords) {
-        this.keywords = keywords;
+        this.keywords = List.copyOf(keywords);
     }
 
     @Override
