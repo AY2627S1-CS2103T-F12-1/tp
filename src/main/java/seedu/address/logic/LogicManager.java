@@ -97,9 +97,10 @@ public class LogicManager implements Logic {
     @Override
     public CommandResult execute(String commandText) throws CommandException, ParseException {
         requireNonNull(commandText);
-        logger.info("----------------[USER COMMAND][" + commandText + "]");
+        logger.info("Processing command.");
 
         Command command = addressBookParser.parseCommand(commandText);
+        logger.fine("Executing " + command.getClass().getSimpleName() + ".");
         if (!isStudentDataAvailable
                 && (command.isModifyingData() || command instanceof ListCommand || command instanceof FindCommand
                         || command instanceof AttendanceCommand)) {
@@ -183,10 +184,10 @@ public class LogicManager implements Logic {
         } catch (DataFileInUseException e) {
             throw new CommandException(MESSAGE_DATA_IN_USE, e);
         } catch (DataStorageLocationException dsle) {
-            logger.warning("Unable to create data storage location: " + dsle.getMessage());
+            logger.warning("Unable to create data storage location: " + dsle.getClass().getSimpleName());
             throw new CommandException(MESSAGE_STORAGE_LOCATION_FAILURE, dsle);
         } catch (IOException ioe) {
-            logger.warning("Unable to save student data: " + ioe.getMessage());
+            logger.warning("Unable to save student data: " + ioe.getClass().getSimpleName());
             throw new CommandException(MESSAGE_SAVE_FAILURE, ioe);
         }
     }

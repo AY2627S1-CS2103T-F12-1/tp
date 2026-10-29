@@ -73,7 +73,7 @@ public class JsonUtil {
                 throw JsonMappingException.from((JsonParser) null, "JSON document must not be null.");
             }
         } catch (IOException e) {
-            logger.warning("Error reading from jsonFile file " + filePath + ": " + e);
+            logger.warning("Error reading JSON file " + filePath + ": " + e.getClass().getSimpleName());
             throw new DataLoadingException(e);
         }
 

@@ -29,6 +29,7 @@ import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.attendance.AttendanceRecord;
 import seedu.address.model.label.Label;
 import seedu.address.model.person.Person;
+import seedu.address.testutil.DiagnosticLogCapture;
 import seedu.address.testutil.PersonBuilder;
 
 public class JsonAddressBookStorageTest {
@@ -51,6 +52,36 @@ public class JsonAddressBookStorageTest {
         assertEquals(original, storage.readAddressBook().orElseThrow());
         try (Stream<Path> files = Files.list(testFolder)) {
             assertEquals(0, files.filter(path -> path.toString().endsWith(".tmp")).count());
+        }
+    }
+
+    @Test
+    public void saveAddressBook_cleanupFails_preservesOriginalFailureAndDataWithoutLoggingStudentValues()
+            throws Exception {
+        Path file = testFolder.resolve("existing.json");
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(file);
+        storage.saveAddressBook(getTypicalAddressBook());
+        String original = Files.readString(file);
+        JsonAddressBookStorage failingStorage = new JsonAddressBookStorage(file) {
+            @Override
+            protected void replaceDataFile(Path temporaryFile, Path targetFile) throws IOException {
+                // A nonempty directory makes cleanup fail deterministically on every CI platform.
+                Files.delete(temporaryFile);
+                Files.createDirectory(temporaryFile);
+                Files.writeString(temporaryFile.resolve("obstruction"), "PrivateStudentMarker");
+                throw new IOException("PrivateStudentMarker");
+            }
+        };
+        failingStorage.readAddressBook();
+
+        try (DiagnosticLogCapture logs = new DiagnosticLogCapture()) {
+            assertThrows(IOException.class, "PrivateStudentMarker", () ->
+                    failingStorage.saveAddressBook(new AddressBook()));
+
+            assertEquals(original, Files.readString(file));
+            assertTrue(logs.getOutput().contains("Unable to remove temporary data file"));
+            assertTrue(logs.getOutput().contains("DirectoryNotEmptyException"));
+            assertFalse(logs.getOutput().contains("PrivateStudentMarker"));
         }
     }
 

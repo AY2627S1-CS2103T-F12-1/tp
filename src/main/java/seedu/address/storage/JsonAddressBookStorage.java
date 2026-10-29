@@ -94,10 +94,10 @@ public class JsonAddressBookStorage {
             savedContents.put(filePath, contents);
             return Optional.of(addressBook);
         } catch (DuplicateStudentIdException dsie) {
-            logger.info("Duplicate Student ID found in " + filePath + ": " + dsie.getMessage());
+            logger.info("Duplicate student IDs found in " + filePath + ".");
             throw new DataLoadingException(dsie.getMessage(), dsie);
         } catch (IllegalValueException | IOException e) {
-            logger.info("Invalid student data found in " + filePath + ": " + e.getMessage());
+            logger.info("Invalid student data found in " + filePath + ".");
             throw new DataLoadingException(MESSAGE_INVALID_FILE, e);
         }
     }
@@ -191,7 +191,8 @@ public class JsonAddressBookStorage {
         try {
             Files.deleteIfExists(temporaryFile);
         } catch (IOException e) {
-            logger.warning("Unable to remove temporary data file " + temporaryFile + ": " + e.getMessage());
+            logger.warning("Unable to remove temporary data file " + temporaryFile
+                    + ": " + e.getClass().getSimpleName());
         }
     }
 
