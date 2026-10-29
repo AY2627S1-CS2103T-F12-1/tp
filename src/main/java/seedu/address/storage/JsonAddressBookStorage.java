@@ -3,13 +3,20 @@ package seedu.address.storage;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
 
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.exceptions.DataLoadingException;
@@ -27,8 +34,11 @@ public class JsonAddressBookStorage {
             "Unable to load student data. The data file may be corrupted or invalid.";
 
     private static final Logger logger = LogsCenter.getLogger(JsonAddressBookStorage.class);
+    // Serialize access within this JVM, including across storage instances, before opening lock-file channels.
+    private static final Object FILE_ACCESS_LOCK = new Object();
 
-    private Path filePath;
+    private final Path filePath;
+    private final Map<Path, byte[]> savedContents = new HashMap<>();
 
     public JsonAddressBookStorage(Path filePath) {
         this.filePath = filePath;
@@ -56,39 +66,47 @@ public class JsonAddressBookStorage {
      */
     public Optional<ReadOnlyAddressBook> readAddressBook(Path filePath) throws DataLoadingException {
         requireNonNull(filePath);
+        synchronized (FILE_ACCESS_LOCK) {
+            return readAndRememberAddressBook(filePath.toAbsolutePath().normalize());
+        }
+    }
 
-        Optional<JsonSerializableAddressBook> jsonAddressBook = readJsonAddressBook(filePath);
-        if (!jsonAddressBook.isPresent()) {
+    private Optional<ReadOnlyAddressBook> readAndRememberAddressBook(Path filePath) throws DataLoadingException {
+        byte[] contents;
+        try {
+            contents = readFileIfExists(filePath);
+        } catch (IOException e) {
+            throw new DataLoadingException(MESSAGE_UNREADABLE_FILE, e);
+        }
+        if (contents == null) {
+            savedContents.put(filePath, null);
             return Optional.empty();
         }
 
         try {
-            return Optional.of(jsonAddressBook.get().toModelType());
+            // Parse the same bytes remembered for conflict detection, without reading the file a second time.
+            JsonSerializableAddressBook jsonAddressBook = JsonUtil.fromJsonString(
+                    new String(contents, StandardCharsets.UTF_8), JsonSerializableAddressBook.class);
+            if (jsonAddressBook == null) {
+                throw new IllegalValueException("JSON document must not be null.");
+            }
+            ReadOnlyAddressBook addressBook = jsonAddressBook.toModelType();
+            savedContents.put(filePath, contents);
+            return Optional.of(addressBook);
         } catch (DuplicateStudentIdException dsie) {
             logger.info("Duplicate student IDs found in " + filePath + ".");
             throw new DataLoadingException(dsie.getMessage(), dsie);
-        } catch (IllegalValueException ive) {
+        } catch (IllegalValueException | IOException e) {
             logger.info("Invalid student data found in " + filePath + ".");
-            throw new DataLoadingException(MESSAGE_INVALID_FILE, ive);
+            throw new DataLoadingException(MESSAGE_INVALID_FILE, e);
         }
     }
 
-    /**
-     * Reads the JSON structure of the data file, distinguishing files that cannot be read from files whose
-     * contents are not valid student data JSON.
-     *
-     * @param filePath The location of the data file.
-     * @return The JSON structure, or {@code Optional.empty()} if the file does not exist.
-     * @throws DataLoadingException if the file cannot be read or is not valid student data JSON.
-     */
-    private Optional<JsonSerializableAddressBook> readJsonAddressBook(Path filePath) throws DataLoadingException {
+    private byte[] readFileIfExists(Path filePath) throws IOException {
         try {
-            return JsonUtil.readJsonFile(filePath, JsonSerializableAddressBook.class);
-        } catch (DataLoadingException e) {
-            if (e.getCause() instanceof JsonProcessingException) {
-                throw new DataLoadingException(MESSAGE_INVALID_FILE, e);
-            }
-            throw new DataLoadingException(MESSAGE_UNREADABLE_FILE, e);
+            return Files.readAllBytes(filePath);
+        } catch (NoSuchFileException e) {
+            return null;
         }
     }
 
@@ -105,24 +123,48 @@ public class JsonAddressBookStorage {
      * Similar to {@link #saveAddressBook(ReadOnlyAddressBook)}.
      * Writes to a temporary file in the same directory, then atomically replaces the destination.
      * If writing or replacement fails, the previous data file remains unchanged.
+     * An existing file must have been read or saved by this storage instance and remain unchanged.
+     * A separate lock file protects the comparison and replacement across application processes.
      *
      * @param addressBook The non-null student records to save.
      * @param filePath location of the data. Cannot be null.
      * @throws DataStorageLocationException if the folder for the data file cannot be created.
+     * @throws DataFileChangedException if the file differs from the last successful read or save.
+     * @throws DataFileInUseException if another process is saving to the same file.
      * @throws IOException if writing fails or the filesystem does not support atomic replacement.
      */
     public void saveAddressBook(ReadOnlyAddressBook addressBook, Path filePath) throws IOException {
         requireNonNull(addressBook);
         requireNonNull(filePath);
 
-        Path targetFile = filePath.toAbsolutePath().normalize();
+        synchronized (FILE_ACCESS_LOCK) {
+            saveWithFileLock(addressBook, filePath.toAbsolutePath().normalize());
+        }
+    }
+
+    private void saveWithFileLock(ReadOnlyAddressBook addressBook, Path targetFile) throws IOException {
         createStorageFolder(targetFile.getParent());
-        Path temporaryFile = Files.createTempFile(targetFile.getParent(), "teachassist-", ".tmp");
-        try {
-            JsonUtil.saveJsonFile(new JsonSerializableAddressBook(addressBook), temporaryFile);
-            replaceDataFile(temporaryFile, targetFile);
-        } finally {
-            removeTemporaryFile(temporaryFile);
+        Path lockFile = targetFile.resolveSibling(targetFile.getFileName() + ".lock");
+        // Keep this file after releasing the lock: deleting it could let writers lock different file identities.
+        try (FileChannel channel = FileChannel.open(lockFile, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+                FileLock lock = channel.tryLock()) {
+            if (lock == null) {
+                throw new DataFileInUseException();
+            }
+            Path temporaryFile = Files.createTempFile(targetFile.getParent(), "teachassist-", ".tmp");
+            try {
+                JsonUtil.saveJsonFile(new JsonSerializableAddressBook(addressBook), temporaryFile);
+                byte[] updatedContents = Files.readAllBytes(temporaryFile);
+                if (!Arrays.equals(savedContents.get(targetFile), readFileIfExists(targetFile))) {
+                    throw new DataFileChangedException();
+                }
+                replaceDataFile(temporaryFile, targetFile);
+                savedContents.put(targetFile, updatedContents);
+            } finally {
+                removeTemporaryFile(temporaryFile);
+            }
+        } catch (OverlappingFileLockException e) {
+            throw new DataFileInUseException();
         }
     }
 

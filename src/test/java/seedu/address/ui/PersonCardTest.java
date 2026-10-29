@@ -5,16 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static seedu.address.testutil.TypicalPersons.ALICE;
-
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.geometry.Bounds;
 import javafx.scene.Node;
@@ -25,6 +20,7 @@ import javafx.scene.control.ScrollBar;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.Region;
 import javafx.scene.text.Text;
+import seedu.address.testutil.FxTestUtil;
 import seedu.address.testutil.PersonBuilder;
 
 /**
@@ -32,24 +28,14 @@ import seedu.address.testutil.PersonBuilder;
  */
 public class PersonCardTest {
 
-    private static boolean isToolkitAvailable;
-
     @BeforeAll
-    public static void startToolkit() {
-        try {
-            Platform.startup(() -> { });
-            isToolkitAvailable = true;
-        } catch (IllegalStateException e) {
-            isToolkitAvailable = true;
-        } catch (RuntimeException | UnsatisfiedLinkError e) {
-            isToolkitAvailable = false;
-        }
+    public static void startToolkit() throws Exception {
+        FxTestUtil.initialize();
     }
 
     @Test
     public void constructor_studentWithGroupLabel_displaysDistinctBadges() throws Exception {
-        assumeTrue(isToolkitAvailable);
-        runOnFxThread(() -> {
+        FxTestUtil.runAndWait(() -> {
             // EP: a student with a group label has both badge types
             Parent root = new PersonCard(new PersonBuilder(ALICE).withLabels("Tutorial 1").build(), 1).getRoot();
             Scene scene = new Scene(root, 400, 300);
@@ -70,8 +56,7 @@ public class PersonCardTest {
 
     @Test
     public void constructor_studentWithoutGroupLabel_displaysStudentIdOnly() throws Exception {
-        assumeTrue(isToolkitAvailable);
-        runOnFxThread(() -> {
+        FxTestUtil.runAndWait(() -> {
             // EP: a student without group labels still has an identifiable Student ID badge
             Parent root = new PersonCard(new PersonBuilder(ALICE).withLabels().build(), 1).getRoot();
             FlowPane labels = (FlowPane) root.lookup("#labels");
@@ -84,8 +69,7 @@ public class PersonCardTest {
 
     @Test
     public void longGroupLabel_narrowAndResizedList_wrapsWithoutClippingDetails() throws Exception {
-        assumeTrue(isToolkitAvailable);
-        runOnFxThread(() -> {
+        FxTestUtil.runAndWait(() -> {
             // EP: a card with a long group label keeps all student details visible when resized
             // BVA: 60-character label at narrow and wide list widths
             var person = new PersonBuilder().withName("Long Label Student")
@@ -133,16 +117,4 @@ public class PersonCardTest {
         });
     }
 
-    private static void runOnFxThread(Runnable verification) throws Exception {
-        CompletableFuture<Void> completed = new CompletableFuture<>();
-        Platform.runLater(() -> {
-            try {
-                verification.run();
-                completed.complete(null);
-            } catch (Throwable failure) {
-                completed.completeExceptionally(failure);
-            }
-        });
-        completed.get(10, TimeUnit.SECONDS);
-    }
 }

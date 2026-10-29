@@ -111,6 +111,8 @@ public class DiagnosticLoggingTest {
                 + "\",\"email\":\"" + EMAIL + "\",\"remark\":\"" + REMARK + "\",\"labels\":[\"" + GROUP + "\"]}";
         Files.writeString(file, "{\"persons\":[" + student + "," + student + "]}");
         assertThrows(DataLoadingException.class, storage::readAddressBook);
+        Files.writeString(file, "{\"persons\":[" + student.replace(EMAIL, "PrivateInvalidEmail") + "]}");
+        assertThrows(DataLoadingException.class, storage::readAddressBook);
 
         assertPrivateDetailsAbsent();
         assertTrue(messages.stream().anyMatch(message -> message.contains("Duplicate")));
@@ -118,7 +120,8 @@ public class DiagnosticLoggingTest {
 
     private void assertPrivateDetailsAbsent() {
         String output = String.join("\n", messages);
-        for (String privateValue : List.of(NAME, STUDENT_ID, EMAIL, REMARK, GROUP, UNKNOWN_COMMAND, "2026-10-20")) {
+        for (String privateValue : List.of(NAME, STUDENT_ID, EMAIL, REMARK, GROUP, UNKNOWN_COMMAND,
+                "PrivateInvalidEmail", "2026-10-20")) {
             assertFalse(output.contains(privateValue), "Diagnostic logs exposed " + privateValue);
         }
     }
