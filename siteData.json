@@ -215,7 +215,10 @@
       "headings": {
         "samuel-lau": "Samuel Lau",
         "project-teachassist": "Project: TeachAssist",
-        "selected-contributions": "Selected contributions"
+        "selected-contributions": "Selected contributions",
+        "features-and-data-model": "Features and data model",
+        "reliability-and-code-quality": "Reliability and code quality",
+        "documentation": "Documentation"
       },
       "headingKeywords": {}
     }
