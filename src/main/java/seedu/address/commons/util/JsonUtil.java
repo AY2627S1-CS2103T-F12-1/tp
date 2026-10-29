@@ -100,13 +100,14 @@ public class JsonUtil {
      * Rejects duplicate object keys, trailing content, and non-string values for string fields.
      * @param <T> The generic type to create an instance of
      * @return The instance of T with the specified values in the JSON string
-     * @throws IOException if the document cannot be parsed or does not match the expected types.
+     * @throws IOException if the document cannot be parsed, contains trailing content,
+     *     or does not match the expected types.
      */
     public static <T> T fromJsonString(String json, Class<T> instanceClass) throws IOException {
         try (JsonParser parser = objectMapper.getFactory().createParser(json)) {
             T result = objectMapper.readValue(parser, instanceClass);
             if (parser.nextToken() != null) {
-                throw JsonMappingException.from(parser, "JSON document must contain exactly one value.");
+                throw JsonMappingException.from(parser, "JSON document must contain only one root value.");
             }
             return result;
         }

@@ -65,9 +65,10 @@ public class JsonUtilTest {
 
     @Test
     public void fromJsonString_trailingContent_throwsIoException() {
-        for (String suffix : List.of("{}", "[]", "null", "true", "42", "\"extra\"", "garbage", "]")) {
-            assertThrows(IOException.class, () -> JsonUtil.fromJsonString(
-                    "{\"name\":\"Alex\"} " + suffix, SerializableTestClass.class));
+        String json = SerializableTestClass.JSON_STRING_REPRESENTATION;
+        for (String suffix : List.of(" garbage", " {}", " []", " null", " true", " 42", " \"text\"",
+                " ]", " }", " {\"unfinished\":")) {
+            assertThrows(IOException.class, () -> JsonUtil.fromJsonString(json + suffix, SerializableTestClass.class));
         }
     }
 
@@ -98,7 +99,15 @@ public class JsonUtilTest {
         assertEquals("Alex \"Tan\"", JsonUtil.fromJsonString(json, SerializableTestClass.class).getName());
     }
 
-    //TODO: @Test jsonUtil_readJsonStringToObjectInstance_correctObject()
+    @Test
+    public void fromJsonString_surroundingWhitespace_success() throws IOException {
+        String json = " \t\r\n" + SerializableTestClass.JSON_STRING_REPRESENTATION + " \t\r\n";
+        SerializableTestClass result = JsonUtil.fromJsonString(json, SerializableTestClass.class);
+
+        assertEquals(SerializableTestClass.getNameTestValue(), result.getName());
+        assertEquals(SerializableTestClass.getListTestValues(), result.getListOfLocalDateTimes());
+        assertEquals(SerializableTestClass.getHashMapTestValues(), result.getMapOfIntegerToString());
+    }
 
     //TODO: @Test jsonUtil_writeThenReadObjectToJson_correctObject()
 }
