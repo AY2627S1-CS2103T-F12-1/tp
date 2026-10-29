@@ -41,6 +41,141 @@ public class JsonAdaptedPersonTest {
             new JsonAdaptedLabel("Discrete Math Tutorial"));
 
     @Test
+    public void toModelType_paddedFields_returnsTrimmedPerson() throws Exception {
+        // EP: ASCII, Unicode, control whitespace, and Hangul filler padding should be removed when loading.
+        // EP: Internal spacing and line breaks remain valid and should be preserved by trimming.
+        for (String padding : new String[] {" ", "\t\r\n", "\u00a0", "\u2009", "\u202f", "\u3000",
+            "\u115f", "\u1160", "\u3164", "\uffa0"}) {
+            JsonAdaptedPerson person = new JsonAdaptedPerson(padding + VALID_NAME + padding,
+                    padding + "a1234567b" + padding, padding + "Quiz+Sam@EXAMPLE.COM" + padding,
+                    List.of(new JsonAdaptedLabel(padding + "Tutorial  1" + padding)),
+                    padding + "Follow up  soon\nNext week" + padding,
+                    List.of(new JsonAdaptedAttendanceRecord(padding + "2026-10-20" + padding,
+                            padding + "Tutorial  1" + padding)));
+            Person expected = new PersonBuilder(BENSON).withStudentId("A1234567B")
+                    .withEmail("Quiz+Sam@example.com").withLabels("Tutorial  1")
+                    .withRemark("Follow up  soon\nNext week")
+                    .withAttendance(new AttendanceRecord(LocalDate.parse("2026-10-20"), new Label("Tutorial  1")))
+                    .build();
+
+            assertEquals(expected, person.toModelType());
+        }
+    }
+
+    @Test
+    public void toModelType_whitespaceOnlyRequiredFields_throwsIllegalValueException() {
+        // EP: Whitespace-only required values are invalid even though the original strings are non-empty.
+        // BVA: Trimming leaves zero characters, below the minimum required for each field.
+        String whitespace = " \t\r\n\u00a0\u2009\u202f\u3000 ";
+        assertThrows(IllegalValueException.class, Name.MESSAGE_CONSTRAINTS, () ->
+                new JsonAdaptedPerson(whitespace, VALID_STUDENT_ID, VALID_EMAIL,
+                        List.of(), "").toModelType());
+        assertThrows(IllegalValueException.class, StudentId.MESSAGE_CONSTRAINTS, () ->
+                new JsonAdaptedPerson(VALID_NAME, whitespace, VALID_EMAIL,
+                        List.of(), "").toModelType());
+        assertThrows(IllegalValueException.class, Email.MESSAGE_CONSTRAINTS, () ->
+                new JsonAdaptedPerson(VALID_NAME, VALID_STUDENT_ID, whitespace,
+                        List.of(), "").toModelType());
+        assertThrows(IllegalValueException.class, Label.MESSAGE_CONSTRAINTS, () ->
+                new JsonAdaptedLabel(whitespace).toModelType());
+        assertThrows(IllegalValueException.class, JsonAdaptedAttendanceRecord.MESSAGE_INVALID_DATE, () ->
+                new JsonAdaptedAttendanceRecord(whitespace, "Tutorial 1").toModelType());
+        assertThrows(IllegalValueException.class, Label.MESSAGE_CONSTRAINTS, () ->
+                new JsonAdaptedAttendanceRecord("2026-10-20", whitespace).toModelType());
+    }
+
+    @Test
+    public void toModelType_whitespaceOnlyRemark_returnsEmptyRemark() throws Exception {
+        // EP: Whitespace-only remarks belong to the valid empty optional remark partition after trimming.
+        // BVA: Zero characters is the accepted lower length boundary for remarks.
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_STUDENT_ID, VALID_EMAIL,
+                List.of(), " \t\r\n\u00a0\u2009\u202f\u3000 ");
+        assertEquals("", person.toModelType().getRemark().value);
+    }
+
+    @Test
+    public void toModelType_paddedMaximumLengthFields_validatesAfterTrimming() throws Exception {
+        // BVA: Values exactly at each maximum length remain valid when padding is removed before length checks.
+        String name = "a".repeat(Name.MAX_LENGTH);
+        String email = "a".repeat(64) + "@" + "b".repeat(63) + "." + "c".repeat(63) + "." + "d".repeat(61);
+        String label = "a".repeat(Label.MAX_NAME_LENGTH);
+        String remark = "x".repeat(Remark.MAX_LENGTH);
+        assertEquals(Email.MAX_LENGTH, email.length());
+        JsonAdaptedPerson person = new JsonAdaptedPerson("\u00a0" + name + "\u3000", VALID_STUDENT_ID,
+                "\u00a0" + email + "\u3000", List.of(new JsonAdaptedLabel("\u00a0" + label + "\u3000")),
+                "\u00a0" + remark + "\u3000",
+                List.of(new JsonAdaptedAttendanceRecord("\u00a02026-10-20\u3000", "\u00a0" + label + "\u3000")));
+        Person expected = new PersonBuilder(BENSON).withName(name).withEmail(email).withLabels(label)
+                .withRemark(remark)
+                .withAttendance(new AttendanceRecord(LocalDate.parse("2026-10-20"), new Label(label))).build();
+
+        assertEquals(expected, person.toModelType());
+    }
+
+    @Test
+    public void toModelType_paddedInvalidFields_throwsIllegalValueException() {
+        // EP: Padding cannot make student IDs or emails with internal spaces valid.
+        assertThrows(IllegalValueException.class, StudentId.MESSAGE_CONSTRAINTS, () ->
+                new JsonAdaptedPerson(VALID_NAME, " A123 4567B ", VALID_EMAIL,
+                        List.of(), "").toModelType());
+        assertThrows(IllegalValueException.class, Email.MESSAGE_CONSTRAINTS, () ->
+                new JsonAdaptedPerson(VALID_NAME, VALID_STUDENT_ID, " user @example.com ",
+                        List.of(), "").toModelType());
+        // BVA: Trimmed remarks and labels one character above their maximum lengths must still be rejected.
+        assertThrows(IllegalValueException.class, Remark.MESSAGE_CONSTRAINTS, () ->
+                new JsonAdaptedPerson(VALID_NAME, VALID_STUDENT_ID, VALID_EMAIL,
+                        List.of(), " " + "x".repeat(Remark.MAX_LENGTH + 1) + " ").toModelType());
+        assertThrows(IllegalValueException.class, Label.MESSAGE_CONSTRAINTS, () ->
+                new JsonAdaptedLabel(" " + "a".repeat(Label.MAX_NAME_LENGTH + 1) + " ").toModelType());
+        // EP: A padded date with the correct format but an impossible calendar day remains invalid.
+        assertThrows(IllegalValueException.class, JsonAdaptedAttendanceRecord.MESSAGE_INVALID_DATE, () ->
+                new JsonAdaptedAttendanceRecord(" 2026-02-30 ", "Tutorial 1").toModelType());
+    }
+
+    @Test
+    public void toModelType_internalUnicodeSpacesInRestrictedFields_throwsIllegalValueException() {
+        // EP: Internal Unicode spaces are ordinary spaces, which IDs, emails, and dates do not allow.
+        assertThrows(IllegalValueException.class, StudentId.MESSAGE_CONSTRAINTS, () ->
+                new JsonAdaptedPerson(VALID_NAME, "A123\u00a04567B", VALID_EMAIL, List.of(), "").toModelType());
+        assertThrows(IllegalValueException.class, Email.MESSAGE_CONSTRAINTS, () ->
+                new JsonAdaptedPerson(VALID_NAME, VALID_STUDENT_ID, "user\u202f@example.com",
+                        List.of(), "").toModelType());
+        assertThrows(IllegalValueException.class, JsonAdaptedAttendanceRecord.MESSAGE_INVALID_DATE, () ->
+                new JsonAdaptedAttendanceRecord("2026-10-\u300020", "Tutorial 1").toModelType());
+    }
+
+    @Test
+    public void toModelType_hangulFillerLabels_detectsDuplicatesAndBlankValues() {
+        // EP: Filler-only labels are blank; duplicate labels preserve identical internal fillers.
+        for (String filler : new String[] {"\u115f", "\u1160", "\u3164", "\uffa0"}) {
+            // BVA: A filler-only label has zero meaningful characters after trimming.
+            assertThrows(IllegalValueException.class, Label.MESSAGE_CONSTRAINTS, () ->
+                    new JsonAdaptedLabel(filler).toModelType());
+            JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_STUDENT_ID, VALID_EMAIL,
+                    List.of(new JsonAdaptedLabel("Tutorial" + filler + "1"),
+                            new JsonAdaptedLabel("tutorial" + filler + "1")), "");
+            assertThrows(IllegalValueException.class, MESSAGE_DUPLICATE_LABEL, person::toModelType);
+        }
+    }
+
+    @Test
+    public void toModelType_paddedDuplicateLabels_throwsIllegalValueException() {
+        // EP: Labels with identical internal Unicode spaces differing only in padding and case are duplicates.
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_STUDENT_ID, VALID_EMAIL,
+                List.of(new JsonAdaptedLabel("Tutorial\u00a01"), new JsonAdaptedLabel(" \ttutorial\u00a01\n")), "");
+        assertThrows(IllegalValueException.class, MESSAGE_DUPLICATE_LABEL, person::toModelType);
+    }
+
+    @Test
+    public void toModelType_paddedDuplicateAttendance_throwsIllegalValueException() {
+        // EP: Matching dates and groups after trimming padding and ignoring case are duplicates.
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_STUDENT_ID, VALID_EMAIL,
+                List.of(), "", List.of(new JsonAdaptedAttendanceRecord("2026-10-20", "Tutorial\u202f1"),
+                        new JsonAdaptedAttendanceRecord("\u30002026-10-20\n", " \ttutorial\u202f1\n")));
+        assertThrows(IllegalValueException.class, MESSAGE_DUPLICATE_ATTENDANCE, person::toModelType);
+    }
+
+    @Test
     public void toModelType_nameAndEmailNormalisation_returnsNormalisedPerson() throws Exception {
         JsonAdaptedPerson person = new JsonAdaptedPerson("  Anne-Marie   O’Neill  ", VALID_STUDENT_ID,
                 "Quiz+Sam@EXAMPLE.COM", List.of(), "");

@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import seedu.address.commons.util.StringUtil;
 import seedu.address.logic.commands.AttendanceCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.label.Label;
@@ -33,7 +34,7 @@ public class AttendanceCommandParser implements Parser<AttendanceCommand> {
      */
     @Override
     public AttendanceCommand parse(String args) throws ParseException {
-        String trimmedArgs = args.trim();
+        String trimmedArgs = StringUtil.trimSpaces(args);
         ArgumentMultimap arguments = ArgumentTokenizer.tokenize(trimmedArgs, PREFIX_DATE, PREFIX_LABEL);
         validateStructure(trimmedArgs, arguments);
 
