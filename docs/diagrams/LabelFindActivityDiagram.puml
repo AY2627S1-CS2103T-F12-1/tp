@@ -25,7 +25,7 @@ endif
 if (Any matching students?) then (yes)
     :Show number of matching students;
 else (no)
-    :Show "0 students listed.";
+    :Show 0 students listed.;
 endif
 
 :Close any displayed attendance report;
