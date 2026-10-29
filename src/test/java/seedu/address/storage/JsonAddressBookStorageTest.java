@@ -14,6 +14,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
@@ -235,6 +238,86 @@ public class JsonAddressBookStorageTest {
         Files.writeString(file, "{ \"persons\": \"not a list\" }");
         assertThrows(DataLoadingException.class, JsonAddressBookStorage.MESSAGE_INVALID_FILE, () ->
                 new JsonAddressBookStorage(file).readAddressBook());
+    }
+
+    @Test
+    public void readAddressBook_trailingContent_rejectsAndPreservesFile() throws Exception {
+        String validJson = JsonUtil.toJsonString(new JsonSerializableAddressBook(getTypicalAddressBook()));
+        for (String suffix : List.of("garbage", "{}", "{\"persons\":[]}", "null", "42")) {
+            assertInvalidFilePreserved(validJson + "\n" + suffix);
+        }
+    }
+
+    @Test
+    public void readAddressBook_duplicateKeys_rejectsAndPreservesFile() throws Exception {
+        String student = JsonUtil.toJsonString(validStudentFields());
+        assertInvalidFilePreserved("{\"persons\":[" + student + "],\"persons\":[]}");
+        assertInvalidFilePreserved("{\"persons\":[" + student.substring(0, student.length() - 1)
+                + ",\"studentId\":\"A9999999Z\"}]}");
+        assertInvalidFilePreserved("{\"persons\":[" + student.substring(0, student.length() - 1)
+                + ",\"attendance\":[{\"date\":\"2026-10-20\",\"group\":\"Tutorial 1\","
+                + "\"group\":\"Tutorial 2\"}]}]}");
+    }
+
+    @Test
+    public void readAddressBook_nonStringStudentFields_rejectsAndPreservesFile() throws Exception {
+        for (String field : List.of("name", "studentId", "email", "remark")) {
+            for (Object value : List.of(true, false, 123456789, 1.5, List.of("text"), Map.of("value", "text"))) {
+                Map<String, Object> student = validStudentFields();
+                student.put(field, value);
+                assertInvalidFilePreserved(JsonUtil.toJsonString(Map.of("persons", List.of(student))));
+            }
+        }
+    }
+
+    @Test
+    public void readAddressBook_nonStringLabelsAndAttendance_rejectsAndPreservesFile() throws Exception {
+        for (Object value : List.of(true, false, 123, 1.5, List.of("text"), Map.of("value", "text"))) {
+            Map<String, Object> student = validStudentFields();
+            student.put("labels", List.of(value));
+            assertInvalidFilePreserved(JsonUtil.toJsonString(Map.of("persons", List.of(student))));
+
+            for (String field : List.of("date", "group")) {
+                student = validStudentFields();
+                Map<String, Object> record = new HashMap<>(Map.of("date", "2026-10-20", "group", "Tutorial 1"));
+                record.put(field, value);
+                student.put("attendance", List.of(record));
+                assertInvalidFilePreserved(JsonUtil.toJsonString(Map.of("persons", List.of(student))));
+            }
+        }
+    }
+
+    @Test
+    public void readAddressBook_legacyOptionalFieldsAndUnknownProperties_success() throws Exception {
+        Path file = testFolder.resolve("legacy.json");
+        for (String optionalFields : List.of("", ",\"remark\":null,\"labels\":null,\"attendance\":null")) {
+            String contents = " \n{\"persons\":[{\"name\":\"Alex Tan\",\"studentId\":\"A0123456B\","
+                    + "\"email\":\"alex@example.com\",\"tags\":[\"legacy\"]" + optionalFields + "}]}\t\n";
+            Files.writeString(file, contents);
+            ReadOnlyAddressBook restored = new JsonAddressBookStorage(file).readAddressBook().orElseThrow();
+
+            assertEquals(1, restored.getPersonList().size());
+            Person student = restored.getPersonList().getFirst();
+            assertEquals("Alex Tan", student.getName().fullName);
+            assertEquals("", student.getRemark().value);
+            assertTrue(student.getLabels().isEmpty());
+            assertTrue(student.getAttendance().isEmpty());
+            assertEquals(contents, Files.readString(file));
+        }
+    }
+
+    private Map<String, Object> validStudentFields() {
+        return new HashMap<>(Map.of("name", "Alex Tan", "studentId", "A0123456B",
+                "email", "alex@example.com", "remark", "Needs practice", "labels", List.of("Tutorial 1")));
+    }
+
+    private void assertInvalidFilePreserved(String contents) throws Exception {
+        Path file = testFolder.resolve("invalid.json");
+        Files.writeString(file, contents);
+
+        assertThrows(DataLoadingException.class, JsonAddressBookStorage.MESSAGE_INVALID_FILE, () ->
+                new JsonAddressBookStorage(file).readAddressBook());
+        assertEquals(contents, Files.readString(file));
     }
 
     @Test
