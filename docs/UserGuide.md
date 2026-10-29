@@ -22,7 +22,7 @@ TeachAssist is a **desktop application for managing student records, optimized f
 
 1. Copy the file to the folder you want to use as the _home folder_ for TeachAssist.
 
-1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar teach-assist-v1.4.jar`.<br>
+1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar teach-assist-v1.5.jar`.<br>
    A GUI similar to the one below should appear in a few seconds. With no saved data file, the student list starts empty.<br>
    ![Ui](images/Ui.png)
 
@@ -46,7 +46,8 @@ If a previously used monitor is disconnected, the saved window position is adjus
 You can resize the window down to 450 × 400 logical pixels. At higher scaling, fewer student cards fit at once;
 scroll the student list to reach the remaining students.
 
-**Warning:** Run only one instance of TeachAssist at a time. Multiple instances can overwrite each other’s saved data.
+**Warning:** Run only one instance of TeachAssist at a time. If another window or a text editor changes the data file,
+this window will reject its next save to avoid overwriting the newer data. Restart TeachAssist to load the latest data.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -226,7 +227,10 @@ Shows present and absent students for a group and date, with totals.
 * This command changes no data. It is blocked after a loading failure; fix or restore the data file and restart.
   A missing file or a successfully loaded empty file still permits an attendance report with zero totals.
 
-**Example:** `attendance d/2026-10-20 l/Tutorial 1`
+**Example:** 
+1. `mark i/A0234567C d/2026-10-20 l/Tutorial 1`
+2. `attendance d/2026-10-20 l/Tutorial 1`
+
 
 ### Clearing all entries: `clear`
 
@@ -293,6 +297,7 @@ directory. Existing files in the launch directory are not imported automatically
 | Problem | What to do |
 |---------|------------|
 | Student data fails to load | Close the app, fix or restore `data/addressbook.json`, and restart. See [Loading the data](#loading-the-data). |
+| Student data has changed outside this window | Another window or a text editor changed `data/addressbook.json` after this window loaded it. The attempted change was not saved. Restart TeachAssist to load the latest data, then retry the command. |
 | Changes cannot be saved | Check folder permissions and available storage, then retry. Detailed causes are in [Saving errors](DeveloperGuide.md#saving-errors). |
 | Main window cannot initialize | A fatal error dialog appears; dismissing it exits the app. Check the exception details and log files before retrying. |
 
@@ -308,9 +313,7 @@ For exact messages and validation order, see [Developer Guide — Appendix: Erro
 --------------------------------------------------------------------------------------------------------------------
 
 ## Known issues
-
-1. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or the keyboard shortcut `F1`) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
-
+- None thus far. 
 --------------------------------------------------------------------------------------------------------------------
 
 ## Command summary
