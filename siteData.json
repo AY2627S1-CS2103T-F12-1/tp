@@ -164,6 +164,17 @@
       "headingKeywords": {}
     },
     {
+      "src": "releases/v1.5.md",
+      "title": "TeachAssist v1.5 release notes",
+      "headings": {
+        "teachassist-v1-5": "TeachAssist v1.5",
+        "improvements-and-bug-fixes": "Improvements and bug fixes",
+        "documentation": "Documentation",
+        "getting-started": "Getting started"
+      },
+      "headingKeywords": {}
+    },
+    {
       "src": "team/8ryanl33.md",
       "title": "Bryan Lee Jun You's Project Portfolio Page",
       "headings": {
