@@ -194,7 +194,8 @@
         "ui-and-usability": "UI and usability",
         "startup-storage-and-privacy": "Startup, storage, and privacy",
         "testing-and-bug-reporting": "Testing and bug reporting",
-        "documentation-and-project-maintenance": "Documentation and project maintenance"
+        "documentation-and-project-maintenance": "Documentation and project maintenance",
+        "authorship-verification": "Authorship verification"
       },
       "headingKeywords": {}
     },
