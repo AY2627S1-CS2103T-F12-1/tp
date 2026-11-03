@@ -180,7 +180,12 @@
       "headings": {
         "bryan-lee-jun-you": "Bryan Lee Jun You",
         "project-teachassist": "Project: TeachAssist",
-        "selected-contributions": "Selected contributions"
+        "selected-contributions": "Selected contributions",
+        "features": "Features",
+        "data-loading-and-saving": "Data loading and saving",
+        "bug-fixes": "Bug fixes",
+        "testing": "Testing",
+        "documentation": "Documentation"
       },
       "headingKeywords": {}
     },
